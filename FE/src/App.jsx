@@ -8,11 +8,13 @@ import TabFeatureShowcase from './components/ui/TabFeatureShowcase';
 import EventsSection from './components/ui/EventsSection';
 import CtaBanner from './components/ui/CtaBanner';
 import FaqSection from './components/ui/FaqSection';
+import AnimatedBackground from './components/ui/AnimatedBackground';
 import './App.css';
 
 function App() {
   return (
     <div className="app-main">
+      <AnimatedBackground />
       <Navbar />
       <main>
         <Hero />

@@ -21,6 +21,7 @@ export default function Navbar() {
           <a href="#cara-kerja" className="nav-link">Cara Kerja</a>
           <a href="#spesialisasi" className="nav-link">Spesialisasi</a>
           <a href="#event" className="nav-link">Event</a>
+          <a href="#faq" className="nav-link">FAQ</a>
         </div>
 
         {/* Right CTA Buttons */}
@@ -49,6 +50,7 @@ export default function Navbar() {
           <a href="#cara-kerja" onClick={() => setIsMobileMenuOpen(false)}>Cara Kerja</a>
           <a href="#spesialisasi" onClick={() => setIsMobileMenuOpen(false)}>Spesialisasi</a>
           <a href="#event" onClick={() => setIsMobileMenuOpen(false)}>Event</a>
+          <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
           <div className="mobile-actions">
             <button className="btn-secondary">
               <User size={18} />

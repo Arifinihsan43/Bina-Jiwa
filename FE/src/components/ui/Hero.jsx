@@ -1,9 +1,19 @@
 import React from 'react';
-import { ArrowUpRight, Sparkles, CheckCircle2, ShieldCheck, Video, Mic } from 'lucide-react';
+import { ArrowUpRight, Sparkles, Star } from 'lucide-react';
 
 export default function Hero() {
   return (
     <section className="hero-section">
+      {/* Dynamic Animated Background Container (Blue & White Ambient Glow) */}
+      <div className="hero-bg-animated" aria-hidden="true">
+        <div className="bg-orb bg-orb-1"></div>
+        <div className="bg-orb bg-orb-2"></div>
+        <div className="bg-orb bg-orb-3"></div>
+        <div className="bg-orb bg-orb-4"></div>
+        <div className="bg-mesh-grid"></div>
+        <div className="bg-light-beam"></div>
+      </div>
+
       <div className="hero-container">
         {/* Left Hero Content */}
         <div className="hero-content">
@@ -13,7 +23,8 @@ export default function Hero() {
           </div>
 
           <h1 className="hero-title">
-            Ruang Aman untuk <span className="highlight-text">Tumbuh,</span> <span className="highlight-text">Pulih,</span> dan Menemukan Ketenangan Jiwa
+            Ruang Aman untuk <span className="highlight-text animated-glow">Tumbuh,</span>{' '}
+            <span className="highlight-text animated-glow delay-1">Pulih,</span> dan Menemukan Ketenangan Jiwa
           </h1>
 
           <p className="hero-description">
@@ -48,8 +59,11 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Right Hero Image Card (Gambar Orang Konsultasi) */}
+        {/* Right Hero Image Card (Gambar Orang Konsultasi + Floating Badges) */}
         <div className="hero-graphic-wrap">
+          {/* Decorative Glowing Blue Aura Ring */}
+          <div className="hero-card-glow-ring"></div>
+
           <div className="consultation-card">
             {/* Image Wrapper */}
             <div className="consultation-img-container">
@@ -58,6 +72,28 @@ export default function Hero() {
                 alt="Sesi Konsultasi Psikologi Online"
                 className="consultation-img"
               />
+              <div className="consultation-img-overlay"></div>
+            </div>
+
+            {/* Floating Live Badge 1 (Top Left) */}
+            <div className="hero-floating-badge badge-top-left">
+              <div className="pulse-indicator">
+                <span className="pulse-dot"></span>
+                <span className="pulse-ring"></span>
+              </div>
+              <div className="badge-text-group">
+                <span className="badge-title">250+ Psikolog Online</span>
+                <span className="badge-sub">Siap mendampingi 24/7</span>
+              </div>
+            </div>
+
+            {/* Floating Live Badge 2 (Bottom Right) */}
+            <div className="hero-floating-badge badge-bottom-right">
+              <div className="star-rating">
+                <Star size={16} className="star-icon" fill="#0284c7" color="#0284c7" />
+                <span className="rating-num">4.9 / 5</span>
+              </div>
+              <span className="badge-sub">Tingkat Kepuasan Pasien</span>
             </div>
           </div>
         </div>
@@ -65,3 +101,5 @@ export default function Hero() {
     </section>
   );
 }
+
+

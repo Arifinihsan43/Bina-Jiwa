@@ -24,7 +24,7 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="faq-section">
+    <section id="faq" className="faq-section">
       <div className="section-container">
         {/* Header */}
         <div className="faq-header text-center">
