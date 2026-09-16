@@ -1,7 +1,7 @@
 import React from 'react';
 import { Heart } from 'lucide-react';
 
-export default function CtaBanner() {
+export default function CtaBanner({ onOpenAuth }) {
   return (
     <section className="cta-section">
       <div className="section-container">
@@ -19,8 +19,12 @@ export default function CtaBanner() {
             </p>
 
             <div className="cta-actions">
-              <button className="btn-cta-primary">Coba Sekarang, Gratis!</button>
-              <button className="btn-cta-secondary">Konsultasi Sekarang</button>
+              <button className="btn-cta-primary" onClick={() => onOpenAuth && onOpenAuth('register')}>
+                Coba Sekarang, Gratis!
+              </button>
+              <button className="btn-cta-secondary" onClick={() => onOpenAuth && onOpenAuth('login')}>
+                Konsultasi Sekarang
+              </button>
             </div>
           </div>
         </div>

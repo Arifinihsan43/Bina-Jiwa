@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Heart, Menu, X, User } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, CheckCircle2 } from 'lucide-react';
 
-export default function Navbar() {
+export default function Navbar({ onOpenLogin, onOpenRegister, user, onLogout }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -26,11 +26,39 @@ export default function Navbar() {
 
         {/* Right CTA Buttons */}
         <div className="nav-actions">
-          <button className="btn-secondary">
-            <User size={18} />
-            <span>Daftar</span>
-          </button>
-          <button className="btn-primary">Masuk</button>
+          {user ? (
+            <div className="user-profile-badge">
+              <div className="user-avatar-sm">
+                <CheckCircle2 size={16} color="#0284c7" />
+              </div>
+              <span className="user-email-name">{user.name || user.email}</span>
+              <button 
+                type="button" 
+                className="btn-logout" 
+                onClick={onLogout}
+                title="Keluar Akun"
+              >
+                <LogOut size={16} />
+                <span>Keluar</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              <button 
+                className="btn-secondary"
+                onClick={onOpenRegister}
+              >
+                <User size={18} />
+                <span>Daftar</span>
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={onOpenLogin}
+              >
+                Masuk
+              </button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -52,15 +80,34 @@ export default function Navbar() {
           <a href="#event" onClick={() => setIsMobileMenuOpen(false)}>Event</a>
           <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
           <div className="mobile-actions">
-            <button className="btn-secondary">
-              <User size={18} />
-              <span>Daftar</span>
-            </button> 
-            <button className="btn-primary">Masuk</button>
+            {user ? (
+              <button 
+                className="btn-logout-mobile" 
+                onClick={() => { onLogout(); setIsMobileMenuOpen(false); }}
+              >
+                <LogOut size={18} />
+                <span>Keluar ({user.name || user.email})</span>
+              </button>
+            ) : (
+              <>
+                <button 
+                  className="btn-secondary" 
+                  onClick={() => { onOpenRegister(); setIsMobileMenuOpen(false); }}
+                >
+                  <User size={18} />
+                  <span>Daftar</span>
+                </button> 
+                <button 
+                  className="btn-primary" 
+                  onClick={() => { onOpenLogin(); setIsMobileMenuOpen(false); }}
+                >
+                  Masuk
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
     </nav>
   );
 }
-
