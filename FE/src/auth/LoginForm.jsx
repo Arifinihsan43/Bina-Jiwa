@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, UserCheck, Stethoscope, AlertCircle } from 'lucide-react';
+import { loginService } from '../service/authService';
 
 export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
   const [role, setRole] = useState('user'); // 'user' | 'doctor'
@@ -10,7 +11,7 @@ export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -21,16 +22,19 @@ export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
 
     setIsLoading(true);
     
-    // Simulate login API request
-    setTimeout(() => {
+    try {
+      const userData = await loginService({ email, password, role });
       setIsLoading(false);
       if (onSuccess) {
-        onSuccess({ email, role });
+        onSuccess(userData);
       }
       if (onClose) {
         onClose();
       }
-    }, 1000);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Gagal masuk. Silakan coba lagi.');
+    }
   };
 
   return (

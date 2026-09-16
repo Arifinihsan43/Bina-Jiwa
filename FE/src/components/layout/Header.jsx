@@ -1,27 +1,48 @@
 import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Heart, Menu, X, User, LogOut, CheckCircle2 } from 'lucide-react';
 
-export default function Navbar({ onOpenLogin, onOpenRegister, user, onLogout }) {
+export default function Header({ user, onLogout }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavClick = (sectionId) => (e) => {
+    e.preventDefault();
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
-    <nav className="navbar">
+    <header className="navbar">
       <div className="nav-container">
         {/* Brand Logo */}
-        <a href="#" className="nav-brand">
+        <Link to="/" className="nav-brand">
           <div className="brand-icon">
             <Heart size={20} fill="#ffffff" color="#ffffff" />
           </div>
           <span className="brand-name">Bina Jiwa</span>
-        </a>
+        </Link>
 
         {/* Desktop Navigation Links */}
         <div className="nav-links">
-          <a href="#fitur" className="nav-link">Fitur Utama</a>
-          <a href="#cara-kerja" className="nav-link">Cara Kerja</a>
-          <a href="#spesialisasi" className="nav-link">Spesialisasi</a>
-          <a href="#event" className="nav-link">Event</a>
-          <a href="#faq" className="nav-link">FAQ</a>
+          <a href="/" onClick={handleNavClick('fitur')} className="nav-link">Fitur Utama</a>
+          <a href="/" onClick={handleNavClick('cara-kerja')} className="nav-link">Cara Kerja</a>
+          <a href="/" onClick={handleNavClick('spesialisasi')} className="nav-link">Spesialisasi</a>
+          <a href="/" onClick={handleNavClick('event')} className="nav-link">Event</a>
+          <a href="/" onClick={handleNavClick('faq')} className="nav-link">FAQ</a>
         </div>
 
         {/* Right CTA Buttons */}
@@ -44,19 +65,21 @@ export default function Navbar({ onOpenLogin, onOpenRegister, user, onLogout }) 
             </div>
           ) : (
             <>
-              <button 
+              <Link 
+                to="/register"
                 className="btn-secondary"
-                onClick={onOpenRegister}
+                style={{ textDecoration: 'none' }}
               >
                 <User size={18} />
                 <span>Daftar</span>
-              </button>
-              <button 
+              </Link>
+              <Link 
+                to="/login"
                 className="btn-primary"
-                onClick={onOpenLogin}
+                style={{ textDecoration: 'none' }}
               >
                 Masuk
-              </button>
+              </Link>
             </>
           )}
         </div>
@@ -74,11 +97,11 @@ export default function Navbar({ onOpenLogin, onOpenRegister, user, onLogout }) 
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="mobile-menu">
-          <a href="#fitur" onClick={() => setIsMobileMenuOpen(false)}>Fitur Utama</a>
-          <a href="#cara-kerja" onClick={() => setIsMobileMenuOpen(false)}>Cara Kerja</a>
-          <a href="#spesialisasi" onClick={() => setIsMobileMenuOpen(false)}>Spesialisasi</a>
-          <a href="#event" onClick={() => setIsMobileMenuOpen(false)}>Event</a>
-          <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
+          <a href="/" onClick={(e) => { handleNavClick('fitur')(e); setIsMobileMenuOpen(false); }}>Fitur Utama</a>
+          <a href="/" onClick={(e) => { handleNavClick('cara-kerja')(e); setIsMobileMenuOpen(false); }}>Cara Kerja</a>
+          <a href="/" onClick={(e) => { handleNavClick('spesialisasi')(e); setIsMobileMenuOpen(false); }}>Spesialisasi</a>
+          <a href="/" onClick={(e) => { handleNavClick('event')(e); setIsMobileMenuOpen(false); }}>Event</a>
+          <a href="/" onClick={(e) => { handleNavClick('faq')(e); setIsMobileMenuOpen(false); }}>FAQ</a>
           <div className="mobile-actions">
             {user ? (
               <button 
@@ -90,24 +113,28 @@ export default function Navbar({ onOpenLogin, onOpenRegister, user, onLogout }) 
               </button>
             ) : (
               <>
-                <button 
+                <Link 
+                  to="/register"
                   className="btn-secondary" 
-                  onClick={() => { onOpenRegister(); setIsMobileMenuOpen(false); }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{ textDecoration: 'none' }}
                 >
                   <User size={18} />
                   <span>Daftar</span>
-                </button> 
-                <button 
+                </Link> 
+                <Link 
+                  to="/login"
                   className="btn-primary" 
-                  onClick={() => { onOpenLogin(); setIsMobileMenuOpen(false); }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{ textDecoration: 'none' }}
                 >
                   Masuk
-                </button>
+                </Link>
               </>
             )}
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

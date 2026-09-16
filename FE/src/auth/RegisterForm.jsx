@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, UserCheck, Stethoscope, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { registerService } from '../service/authService';
 
 export default function RegisterForm({ onSwitchToLogin, onSuccess, onClose }) {
   const [role, setRole] = useState('user'); // 'user' | 'doctor'
@@ -29,7 +30,7 @@ export default function RegisterForm({ onSwitchToLogin, onSuccess, onClose }) {
 
   const strength = getPasswordStrength(password);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -50,16 +51,19 @@ export default function RegisterForm({ onSwitchToLogin, onSuccess, onClose }) {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const userData = await registerService({ name, email, phone, password, role });
       setIsLoading(false);
       if (onSuccess) {
-        onSuccess({ name, email, role });
+        onSuccess(userData);
       }
       if (onClose) {
         onClose();
       }
-    }, 1100);
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Gagal mendaftar. Silakan coba lagi.');
+    }
   };
 
   return (

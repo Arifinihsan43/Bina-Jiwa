@@ -1,11 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Heart, ArrowLeft, Shield, Users, Star, Sparkles } from 'lucide-react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import AnimatedBackground from '../components/ui/AnimatedBackground';
 
-export default function AuthPage({ initialMode = 'login', onBackToHome, onAuthSuccess }) {
-  const [mode, setMode] = useState(initialMode);
+export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [mode, setMode] = useState(() => {
+    if (location.pathname === '/register') return 'register';
+    return initialMode;
+  });
+
+  useEffect(() => {
+    if (location.pathname === '/register') {
+      setMode('register');
+    } else if (location.pathname === '/login') {
+      setMode('login');
+    }
+  }, [location.pathname]);
+
+  const handleSwitchMode = (newMode) => {
+    setMode(newMode);
+    navigate(newMode === 'register' ? '/register' : '/login');
+  };
+
+  const handleBackToHome = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <div className="auth-page-wrapper">
@@ -13,17 +41,17 @@ export default function AuthPage({ initialMode = 'login', onBackToHome, onAuthSu
 
       {/* Top Bar Navigation */}
       <header className="auth-page-nav">
-        <button type="button" className="auth-back-btn" onClick={onBackToHome}>
+        <button type="button" className="auth-back-btn" onClick={handleBackToHome}>
           <ArrowLeft size={18} />
           <span>Kembali ke Beranda</span>
         </button>
 
-        <a href="#" onClick={(e) => { e.preventDefault(); onBackToHome(); }} className="nav-brand">
+        <Link to="/" className="nav-brand">
           <div className="brand-icon">
             <Heart size={20} fill="#ffffff" color="#ffffff" />
           </div>
           <span className="brand-name">Bina Jiwa</span>
-        </a>
+        </Link>
       </header>
 
       {/* Main Container */}
@@ -85,14 +113,14 @@ export default function AuthPage({ initialMode = 'login', onBackToHome, onAuthSu
               <button
                 type="button"
                 className={`auth-modal-tab-btn ${mode === 'login' ? 'active' : ''}`}
-                onClick={() => setMode('login')}
+                onClick={() => handleSwitchMode('login')}
               >
                 <span>Masuk</span>
               </button>
               <button
                 type="button"
                 className={`auth-modal-tab-btn ${mode === 'register' ? 'active' : ''}`}
-                onClick={() => setMode('register')}
+                onClick={() => handleSwitchMode('register')}
               >
                 <span>Daftar Akun</span>
                 <span className="tab-badge-new">Gratis</span>
@@ -101,21 +129,21 @@ export default function AuthPage({ initialMode = 'login', onBackToHome, onAuthSu
 
             {mode === 'login' ? (
               <LoginForm
-                onSwitchToRegister={() => setMode('register')}
+                onSwitchToRegister={() => handleSwitchMode('register')}
                 onSuccess={(user) => {
                   if (onAuthSuccess) onAuthSuccess(user);
-                  onBackToHome();
+                  navigate('/');
                 }}
-                onClose={onBackToHome}
+                onClose={handleBackToHome}
               />
             ) : (
               <RegisterForm
-                onSwitchToLogin={() => setMode('login')}
+                onSwitchToLogin={() => handleSwitchMode('login')}
                 onSuccess={(user) => {
                   if (onAuthSuccess) onAuthSuccess(user);
-                  onBackToHome();
+                  navigate('/');
                 }}
-                onClose={onBackToHome}
+                onClose={handleBackToHome}
               />
             )}
           </div>

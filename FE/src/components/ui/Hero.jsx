@@ -1,7 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowUpRight, Sparkles, Star } from 'lucide-react';
 
-export default function Hero({ onOpenAuth }) {
+export default function Hero() {
   return (
     <section className="hero-section">
       {/* Dynamic Animated Background Container (Blue & White Ambient Glow) */}
@@ -32,9 +33,9 @@ export default function Hero({ onOpenAuth }) {
           </p>
 
           <div className="hero-cta-group">
-            <button className="btn-hero-primary" onClick={() => onOpenAuth && onOpenAuth('register')}>
+            <Link to="/register" className="btn-hero-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Mulai Konsultasi <ArrowUpRight size={18} />
-            </button>
+            </Link>
             <a href="#fitur" className="btn-hero-secondary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Pelajari Fitur <ArrowUpRight size={18} />
             </a>
