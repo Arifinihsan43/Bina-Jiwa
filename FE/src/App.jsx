@@ -9,8 +9,8 @@ import EventsSection from './components/ui/EventsSection';
 import CtaBanner from './components/ui/CtaBanner';
 import FaqSection from './components/ui/FaqSection';
 import AnimatedBackground from './components/ui/AnimatedBackground';
-import AuthModal from './components/auth/AuthModal';
-import AuthPage from './components/auth/AuthPage';
+import AuthModal from './auth/AuthModal';
+import AuthPage from './auth/AuthPage';
 import './App.css';
 
 function App() {
