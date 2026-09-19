@@ -49,6 +49,9 @@ export default function Header({ user, onLogout }) {
         <div className="nav-actions">
           {user ? (
             <div className="user-profile-badge">
+              <Link to="/dashboard" className="btn-secondary" style={{ textDecoration: 'none', padding: '6px 12px', fontSize: '13px' }}>
+                Dashboard
+              </Link>
               <div className="user-avatar-sm">
                 <CheckCircle2 size={16} color="#0284c7" />
               </div>

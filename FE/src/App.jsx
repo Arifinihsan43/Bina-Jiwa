@@ -9,7 +9,7 @@ function App() {
 
   const handleAuthSuccess = (userData) => {
     setUser(userData);
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const handleLogout = () => {
