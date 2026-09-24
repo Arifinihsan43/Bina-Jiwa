@@ -1,21 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../components/dashboard/DashboardHeader';
-import DashboardHeroBanner from '../components/dashboard/DashboardHeroBanner';
-import MoodCheckInCard from '../components/dashboard/MoodCheckInCard';
-import QuickReflectionCard from '../components/dashboard/QuickReflectionCard';
-import StatsAndScheduleGrid from '../components/dashboard/StatsAndScheduleGrid';
-import HotlineAlertCard from '../components/dashboard/HotlineAlertCard';
-import MoodReflectionPage from './MoodReflectionPage';
-import MessagesPage from './MessagesPage';
-import KomunitasPage from './KomunitasPage';
-import PsikologPage from './PsikologPage';
-import EventsPage from './EventsPage';
+import {
+  DashboardHeader,
+  DashboardHeroBanner,
+  MoodCheckInCard,
+  QuickReflectionCard,
+  StatsAndScheduleGrid,
+  HotlineAlertCard
+} from '../components/dashboard';
 import { getDashboardData, saveMoodCheckIn, saveReflection } from '../service/dashboardService';
 
-export default function DashboardPage({ user, onLogout }) {
-  const [activeMenu, setActiveMenu] = useState('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function DashboardPage({ user }) {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,10 +19,6 @@ export default function DashboardPage({ user, onLogout }) {
       setIsLoading(false);
     });
   }, []);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
 
   const handleSaveMood = async (moodData) => {
     await saveMoodCheckIn(moodData);
@@ -40,111 +30,35 @@ export default function DashboardPage({ user, onLogout }) {
 
   const currentUser = user || dashboardData?.user;
 
-  if (activeMenu === 'mood') {
-    return (
-      <MoodReflectionPage
-        user={currentUser}
-        onLogout={onLogout}
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-      />
-    );
-  }
-
-  if (activeMenu === 'pesan') {
-    return (
-      <MessagesPage
-        user={currentUser}
-        onLogout={onLogout}
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-      />
-    );
-  }
-
-  if (activeMenu === 'komunitas') {
-    return (
-      <KomunitasPage
-        user={currentUser}
-        onLogout={onLogout}
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-      />
-    );
-  }
-
-  if (activeMenu === 'psikolog') {
-    return (
-      <PsikologPage
-        user={currentUser}
-        onLogout={onLogout}
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-      />
-    );
-  }
-
-  if (activeMenu === 'events') {
-    return (
-      <EventsPage
-        user={currentUser}
-        onLogout={onLogout}
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-      />
-    );
-  }
-
   return (
-    <div className={`db-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Mobile Backdrop Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="db-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+    <div className="db-main-content">
+      <DashboardHeader dateInfo={dashboardData?.dateInfo} />
 
-      {/* Left Sidebar */}
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-        user={currentUser}
-        onLogout={onLogout}
-      />
+      <div className="db-scrollable-body">
+        {/* Top Hero Banner */}
+        <DashboardHeroBanner user={currentUser} />
 
-      {/* Main Dashboard Content Area */}
-      <div className="db-main-content">
-        <DashboardHeader dateInfo={dashboardData?.dateInfo} />
-
-        <div className="db-scrollable-body">
-          {/* Top Hero Banner */}
-          <DashboardHeroBanner user={currentUser} />
-
-          {/* Middle Row: Mood Check-in (Left) + Quick Reflection (Right) */}
-          <div className="db-middle-grid">
-            <MoodCheckInCard
-              initialData={dashboardData?.moodCheckIn}
-              onSave={handleSaveMood}
-            />
-            <QuickReflectionCard
-              initialPrompt={dashboardData?.reflection?.question}
-              onSave={handleSaveReflectionText}
-            />
-          </div>
-
-          {/* Bottom Grid: Stats (2 cards) + Upcoming Session (1 card) */}
-          <StatsAndScheduleGrid
-            weeklyStats={dashboardData?.weeklyStats}
-            consistency={dashboardData?.consistency}
-            upcomingSession={dashboardData?.upcomingSession}
+        {/* Middle Row: Mood Check-in (Left) + Quick Reflection (Right) */}
+        <div className="db-middle-grid">
+          <MoodCheckInCard
+            initialData={dashboardData?.moodCheckIn}
+            onSave={handleSaveMood}
           />
-
-          {/* Hotline Emergency Alert Card */}
-          <HotlineAlertCard />
+          <QuickReflectionCard
+            initialPrompt={dashboardData?.reflection?.question}
+            onSave={handleSaveReflectionText}
+          />
         </div>
+
+        {/* Bottom Grid: Stats (2 cards) + Upcoming Session (1 card) */}
+        <StatsAndScheduleGrid
+          weeklyStats={dashboardData?.weeklyStats}
+          consistency={dashboardData?.consistency}
+          upcomingSession={dashboardData?.upcomingSession}
+        />
+
+        {/* Hotline Emergency Alert Card */}
+        <HotlineAlertCard />
       </div>
     </div>
   );

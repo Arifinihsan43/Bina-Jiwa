@@ -10,7 +10,7 @@
   background-color: #f8fafc;
   background-image: radial-gradient(#e2e8f0 0.75px, transparent 0.75px);
   background-size: 24px 24px;
-  padding: 32px 40px 60px 40px;
+  padding: 24px 32px 60px 32px;
   scroll-behavior: smooth;
 }
 
@@ -32,8 +32,9 @@
 }
 
 .psikolog-content-wrapper {
-  max-width: 1240px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -666,7 +667,133 @@
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+}
+
+.map-api-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0284c7;
+  background-color: #e0f2fe;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid #bae6fd;
+}
+
+/* Leaflet Custom Marker & Popup Styles */
+.custom-leaflet-marker {
+  background: none;
+  border: none;
+}
+
+.leaflet-pin-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1.5px solid #0ea5e9;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.leaflet-pin-wrapper.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #ffffff;
+  transform: scale(1.15);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+}
+
+.leaflet-pin-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.leaflet-pin-wrapper.active .leaflet-pin-label {
+  color: #ffffff;
+}
+
+.leaflet-custom-popup .leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0f2fe;
+}
+
+.leaflet-popup-card {
+  padding: 14px;
+  width: 210px;
+}
+
+.leaflet-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.leaflet-popup-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #e0f2fe;
+}
+
+.leaflet-popup-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.leaflet-popup-clinic {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.leaflet-popup-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.leaflet-popup-slot {
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.leaflet-popup-fee {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.leaflet-popup-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.leaflet-popup-btn:hover {
+  background: #0369a1;
 }
 
 .map-checkbox-label {

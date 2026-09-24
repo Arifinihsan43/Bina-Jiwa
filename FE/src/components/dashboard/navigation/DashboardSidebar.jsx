@@ -6,6 +6,7 @@ import {
   Users, 
   MessageSquare, 
   Search, 
+  CalendarCheck,
   Calendar, 
   AlertCircle, 
   Settings, 
@@ -13,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import BinaJiwaLogo from '../common/BinaJiwaLogo';
+import BinaJiwaLogo from '../../common/BinaJiwaLogo';
 
 export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activeMenu = 'dashboard', setActiveMenu, user, onLogout }) {
   const navigate = useNavigate();
@@ -29,8 +30,17 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
     { id: 'komunitas', label: 'Komunitas', icon: Users },
     { id: 'pesan', label: 'Pesan', icon: MessageSquare },
     { id: 'psikolog', label: 'Cari Psikolog', icon: Search },
+    { id: 'janji-temu', label: 'Janji Temu', icon: CalendarCheck },
     { id: 'events', label: 'Events & Workshop', icon: Calendar },
   ];
+
+  const handleNavClick = (itemId) => {
+    if (setActiveMenu) {
+      setActiveMenu(itemId);
+    }
+    const targetPath = itemId === 'dashboard' ? '/dashboard' : `/${itemId}`;
+    navigate(targetPath);
+  };
 
   return (
     <aside className={`db-sidebar ${isOpen ? 'open' : 'collapsed'}`}>
@@ -68,7 +78,7 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
                 key={item.id}
                 type="button"
                 className={`db-nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => setActiveMenu && setActiveMenu(item.id)}
+                onClick={() => handleNavClick(item.id)}
                 title={!isOpen ? item.label : undefined}
               >
                 <Icon size={18} className="db-nav-icon" />

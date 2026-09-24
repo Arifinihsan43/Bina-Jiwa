@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 import AudioPlayerCard from '../components/chat/AudioPlayerCard';
-import '../components/chat/ChatMessages.css';
+import '../styles/chat.css';
 import {
   ShieldCheck,
   Bell,
@@ -25,16 +24,11 @@ import {
   User
 } from 'lucide-react';
 
-export default function MessagesPage({ user, onLogout, activeMenu = 'pesan', setActiveMenu }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function MessagesPage() {
   const [activeFilter, setActiveFilter] = useState('Semua');
   const [selectedChatId, setSelectedChatId] = useState('nadia');
   const [inputMessage, setInputMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
 
   // Pre-populated conversations data matching the user's exact specification image
   const [chatsData, setChatsData] = useState({
@@ -249,28 +243,8 @@ export default function MessagesPage({ user, onLogout, activeMenu = 'pesan', set
   });
 
   return (
-    <div className={`db-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Mobile Backdrop Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="db-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main Left Sidebar */}
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        activeMenu={activeMenu || 'pesan'}
-        setActiveMenu={setActiveMenu}
-        user={user}
-        onLogout={onLogout}
-      />
-
-      {/* Main Chat Workspace */}
-      <div className="db-main-content p-0 overflow-hidden">
-        <div className="chat-portal-wrapper">
+    <div className="db-main-content p-0 overflow-hidden">
+      <div className="chat-portal-wrapper">
           {/* Top Portal Banner / Header Bar */}
           <header className="portal-top-bar">
             <div className="portal-title-area">
@@ -561,6 +535,5 @@ export default function MessagesPage({ user, onLogout, activeMenu = 'pesan', set
           </div>
         </div>
       </div>
-    </div>
   );
 }

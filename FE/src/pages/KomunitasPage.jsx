@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../components/dashboard/DashboardHeader';
-import '../components/komunitas/Komunitas.css';
+import { DashboardHeader } from '../components/dashboard';
+import '../styles/komunitas.css';
 import {
   Heart,
   Globe,
@@ -46,8 +45,7 @@ const CATEGORIES = [
   'Family & Parenting'
 ];
 
-export default function KomunitasPage({ user, onLogout, activeMenu = 'komunitas', setActiveMenu }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function KomunitasPage() {
   const [selectedScope, setSelectedScope] = useState('seluruh');
   const [selectedTopic, setSelectedTopic] = useState('Semua Topik');
   const [selectedSort, setSelectedSort] = useState('relevan');
@@ -148,10 +146,6 @@ export default function KomunitasPage({ user, onLogout, activeMenu = 'komunitas'
       ]
     }
   ]);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
 
   const handleRandomizePersona = () => {
     setCurrentPersonaIndex((prev) => (prev + 1) % RANDOM_PERSONAS.length);
@@ -298,28 +292,8 @@ export default function KomunitasPage({ user, onLogout, activeMenu = 'komunitas'
     });
 
   return (
-    <div className={`db-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Mobile Backdrop Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="db-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main Left Sidebar */}
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        activeMenu={activeMenu || 'komunitas'}
-        setActiveMenu={setActiveMenu}
-        user={user}
-        onLogout={onLogout}
-      />
-
-      {/* Main Content Area */}
-      <div className="db-main-content">
-        <DashboardHeader />
+    <div className="db-main-content">
+      <DashboardHeader />
 
         <div className="komunitas-page-container">
           <div className="komunitas-content-wrapper">
@@ -715,7 +689,6 @@ export default function KomunitasPage({ user, onLogout, activeMenu = 'komunitas'
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

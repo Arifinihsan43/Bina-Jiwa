@@ -1,22 +1,18 @@
 import React, { useState } from 'react';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../components/dashboard/DashboardHeader';
-import MoodReflectionHero from '../components/dashboard/MoodReflectionHero';
-import MoodCalendarGrid from '../components/dashboard/MoodCalendarGrid';
-import MoodCheckInCard from '../components/dashboard/MoodCheckInCard';
-import EmotionTrendChart from '../components/dashboard/EmotionTrendChart';
-import DailyQuoteCard from '../components/dashboard/DailyQuoteCard';
+import {
+  DashboardHeader,
+  MoodReflectionHero,
+  MoodCalendarGrid,
+  MoodCheckInCard,
+  EmotionTrendChart,
+  DailyQuoteCard
+} from '../components/dashboard';
 import { saveTodayMoodLog, hasFilledToday } from '../service/dashboardService';
 import { X } from 'lucide-react';
 
-export default function MoodReflectionPage({ user, onLogout, activeMenu = 'mood', setActiveMenu }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function MoodReflectionPage() {
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [key, setKey] = useState(0); // Trigger re-render of calendar
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
 
   const handleOpenCheckIn = () => {
     if (hasFilledToday()) {
@@ -37,42 +33,21 @@ export default function MoodReflectionPage({ user, onLogout, activeMenu = 'mood'
   };
 
   return (
-    <div className={`db-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Mobile Backdrop Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="db-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+    <div className="db-main-content">
+      <DashboardHeader />
 
-      {/* Left Sidebar */}
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        activeMenu={activeMenu || 'mood'}
-        setActiveMenu={setActiveMenu}
-        user={user}
-        onLogout={onLogout}
-      />
+      <div className="db-scrollable-body">
+        {/* Hero Banner */}
+        <MoodReflectionHero />
 
-      {/* Main Content */}
-      <div className="db-main-content">
-        <DashboardHeader />
+        {/* Real-time Monthly Calendar Grid */}
+        <MoodCalendarGrid key={key} onOpenCheckIn={handleOpenCheckIn} />
 
-        <div className="db-scrollable-body">
-          {/* Hero Banner */}
-          <MoodReflectionHero />
+        {/* 30-Day Emotion Trend Chart */}
+        <EmotionTrendChart />
 
-          {/* Real-time Monthly Calendar Grid */}
-          <MoodCalendarGrid key={key} onOpenCheckIn={handleOpenCheckIn} />
-
-          {/* 30-Day Emotion Trend Chart */}
-          <EmotionTrendChart />
-
-          {/* Daily Wisdom Quote Card */}
-          <DailyQuoteCard />
-        </div>
+        {/* Daily Wisdom Quote Card */}
+        <DailyQuoteCard />
       </div>
 
       {/* Mood Check-In Modal Overlay */}

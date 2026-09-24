@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, HelpCircle, Check, Plus, AlertCircle } from 'lucide-react';
-import { getTodayDateKey, getStoredMoodLogs } from '../../service/dashboardService';
-import MoodDetailModal from './MoodDetailModal';
+import { getTodayDateKey, getStoredMoodLogs } from '../../../service/dashboardService';
+import MoodDetailModal from '../modals/MoodDetailModal';
 
 export default function MoodCalendarGrid({ onOpenCheckIn }) {
   const [currentDate, setCurrentDate] = useState(new Date());

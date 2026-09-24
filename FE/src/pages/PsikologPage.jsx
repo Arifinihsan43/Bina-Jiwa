@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../components/dashboard/DashboardHeader';
-import '../components/psikolog/Psikolog.css';
+import { DashboardHeader } from '../components/dashboard';
+import PsikologLeafletMap from '../components/psikolog/PsikologLeafletMap';
+import '../styles/psikolog.css';
 import {
   Search,
   MapPin,
@@ -119,8 +119,7 @@ const PSYCHOLOGISTS = [
   }
 ];
 
-export default function PsikologPage({ user, onLogout, activeMenu = 'psikolog', setActiveMenu }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function PsikologPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRadius, setSelectedRadius] = useState('Jakarta Selatan (Radius 5 km)');
   const [activeChip, setActiveChip] = useState('Semua');
@@ -132,10 +131,6 @@ export default function PsikologPage({ user, onLogout, activeMenu = 'psikolog', 
   const [selectedDate, setSelectedDate] = useState('2026-09-25');
   const [selectedSlot, setSelectedSlot] = useState('');
   const [selectedMode, setSelectedMode] = useState('offline');
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
 
   // Filter psychologists
   const filteredPsychologists = PSYCHOLOGISTS.filter((p) => {
@@ -178,28 +173,8 @@ export default function PsikologPage({ user, onLogout, activeMenu = 'psikolog', 
   };
 
   return (
-    <div className={`db-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Mobile Backdrop Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="db-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main Left Sidebar */}
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        activeMenu={activeMenu || 'psikolog'}
-        setActiveMenu={setActiveMenu}
-        user={user}
-        onLogout={onLogout}
-      />
-
-      {/* Main Content Area */}
-      <div className="db-main-content">
-        <DashboardHeader />
+    <div className="db-main-content">
+      <DashboardHeader />
 
         <div className="psikolog-page-container">
           <div className="psikolog-content-wrapper">
@@ -451,104 +426,15 @@ export default function PsikologPage({ user, onLogout, activeMenu = 'psikolog', 
                 </div>
               </div>
 
-              {/* Right Side: Interactive Styled Vector Map Container */}
-              <div className="psikolog-map-column">
-                <div className="map-card-wrapper">
-                  {/* Map Top Toggle Bar */}
-                  <div className="map-top-bar">
-                    <label className="map-checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={onlyAvailableToday}
-                        onChange={(e) => setOnlyAvailableToday(e.target.checked)}
-                      />
-                      <span>Hanya Buka Hari Ini</span>
-                    </label>
-                  </div>
-
-                  {/* Canvas / Vector Map Graphic */}
-                  <div className="styled-map-canvas">
-                    {/* SVG Map Texture Backdrop */}
-                    <svg className="map-svg-grid" width="100%" height="100%">
-                      <defs>
-                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e0f2fe" strokeWidth="1" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#grid)" />
-                      
-                      {/* Roads / Rivers graphic vectors */}
-                      <path d="M 10 120 Q 150 180 380 140 T 600 240" fill="none" stroke="#cbd5e1" strokeWidth="12" />
-                      <path d="M 120 10 L 220 500" fill="none" stroke="#93c5fd" strokeWidth="8" />
-                      <path d="M 280 20 Q 320 220 300 480" fill="none" stroke="#e2e8f0" strokeWidth="18" />
-                      
-                      {/* Green park zones */}
-                      <circle cx="280" cy="360" r="45" fill="#dcfce7" opacity="0.7" />
-                      <circle cx="100" cy="180" r="35" fill="#dcfce7" opacity="0.6" />
-                    </svg>
-
-                    {/* Area Labels on Map */}
-                    <span className="map-area-label label-menteng">Menteng</span>
-                    <span className="map-area-label label-jakarta">Jakarta</span>
-                    <span className="map-area-label label-south">South Jakarta</span>
-                    <span className="map-area-label label-tebet">Tebet Eco Park</span>
-
-                    {/* Pins on Map */}
-                    {PSYCHOLOGISTS.map((p, idx) => {
-                      const isActive = activePinId === p.id;
-                      const topPos = 25 + idx * 20 + '%';
-                      const leftPos = 20 + idx * 22 + '%';
-
-                      return (
-                        <div
-                          key={p.id}
-                          className={`map-pin-container ${isActive ? 'active' : ''}`}
-                          style={{ top: topPos, left: leftPos }}
-                          onClick={() => setActivePinId(p.id)}
-                        >
-                          <div className="map-pin-badge">
-                            <MapPin size={22} className={`map-pin-icon ${isActive ? 'fill-sky-600 text-sky-600' : 'fill-sky-500 text-white'}`} />
-                          </div>
-
-                          {/* Tooltip on Active Map Pin */}
-                          {isActive && (
-                            <div className="map-pin-tooltip">
-                              <div className="tooltip-header">
-                                <span className="tooltip-name">{p.name.split(',')[0]}</span>
-                                <span className="tooltip-location">{p.locationName.split(',')[0]}</span>
-                              </div>
-                              <div className="tooltip-details">
-                                <span className="tooltip-slot">
-                                  {p.availableToday ? `Hari ini ${p.slots[0]}` : p.availableNext}
-                                </span>
-                                <span className="tooltip-price">{p.fee}</span>
-                              </div>
-                              <button
-                                type="button"
-                                className="tooltip-action-btn"
-                                onClick={() => handleOpenBooking(p)}
-                              >
-                                Rute &amp; Jadwal &rarr;
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Map Footer Bar */}
-                    <div className="map-footer-bar">
-                      <div className="map-footer-left">
-                        <ShieldCheck size={15} className="text-sky-600" />
-                        <span>Area tenang &amp; terdaftar berstandar klinis</span>
-                      </div>
-                      <a href="#panduan" className="map-footer-link">
-                        Panduan Konsultasi <ExternalLink size={12} />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Right Side: Interactive Leaflet Map Container */}
+              <PsikologLeafletMap
+                psychologists={filteredPsychologists}
+                activePinId={activePinId}
+                setActivePinId={setActivePinId}
+                onOpenBooking={handleOpenBooking}
+                onlyAvailableToday={onlyAvailableToday}
+                setOnlyAvailableToday={setOnlyAvailableToday}
+              />
             </div>
 
             {/* Bottom Medical Ethics & Privacy Banner */}
@@ -580,7 +466,6 @@ export default function PsikologPage({ user, onLogout, activeMenu = 'psikolog', 
 
           </div>
         </div>
-      </div>
 
       {/* Booking Modal */}
       {selectedPsikologModal && (
@@ -736,7 +621,6 @@ export default function PsikologPage({ user, onLogout, activeMenu = 'psikolog', 
           </div>
         </div>
       )}
-
     </div>
   );
 }

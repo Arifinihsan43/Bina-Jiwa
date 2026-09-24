@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
-import DashboardHeader from '../components/dashboard/DashboardHeader';
-import '../components/events/Events.css';
+import { DashboardSidebar, DashboardHeader } from '../components/dashboard';
+import '../styles/events.css';
 import {
   Calendar,
   Clock,
@@ -168,8 +167,7 @@ const EVENTS_LIST = [
   }
 ];
 
-export default function EventsPage({ user, onLogout, activeMenu = 'events', setActiveMenu }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+export default function EventsPage({ user }) {
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'my_events'
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTopic, setActiveTopic] = useState('Semua Topik');
@@ -177,10 +175,6 @@ export default function EventsPage({ user, onLogout, activeMenu = 'events', setA
   const [showSyllabusModal, setShowSyllabusModal] = useState(false);
   const [registeredEvents, setRegisteredEvents] = useState([1]); // Default registered in Event #1
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
 
   const handleRegisterEvent = (eventObj) => {
     setSelectedEventModal(eventObj);
@@ -225,28 +219,8 @@ export default function EventsPage({ user, onLogout, activeMenu = 'events', setA
   });
 
   return (
-    <div className={`db-layout-wrapper ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-      {/* Mobile Backdrop Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="db-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main Left Sidebar */}
-      <DashboardSidebar
-        isOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-        activeMenu={activeMenu || 'events'}
-        setActiveMenu={setActiveMenu}
-        user={user}
-        onLogout={onLogout}
-      />
-
-      {/* Main Content Area */}
-      <div className="db-main-content">
-        <DashboardHeader />
+    <div className="db-main-content">
+      <DashboardHeader />
 
         <div className="events-page-container">
           <div className="events-content-wrapper">
@@ -528,7 +502,6 @@ export default function EventsPage({ user, onLogout, activeMenu = 'events', setA
 
           </div>
         </div>
-      </div>
 
       {/* Syllabus Modal */}
       {showSyllabusModal && (
@@ -640,7 +613,6 @@ export default function EventsPage({ user, onLogout, activeMenu = 'events', setA
           </div>
         </div>
       )}
-
     </div>
   );
 }
