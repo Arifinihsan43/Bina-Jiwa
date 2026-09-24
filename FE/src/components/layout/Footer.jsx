@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import BinaJiwaLogo from '../common/BinaJiwaLogo';
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ export default function Footer() {
           <div className="footer-brand-col">
             <Link to="/" className="nav-brand">
               <div className="brand-icon">
-                <Heart size={20} fill="#ffffff" color="#ffffff" />
+                <BinaJiwaLogo size={22} color="#ffffff" />
               </div>
               <span className="brand-name">Bina Jiwa</span>
             </Link>

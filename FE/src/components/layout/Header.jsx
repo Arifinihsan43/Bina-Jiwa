@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Menu, X, User, LogOut, CheckCircle2 } from 'lucide-react';
+import { Menu, X, User, LogOut, CheckCircle2 } from 'lucide-react';
+import BinaJiwaLogo from '../common/BinaJiwaLogo';
 
 export default function Header({ user, onLogout }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -31,7 +32,7 @@ export default function Header({ user, onLogout }) {
         {/* Brand Logo */}
         <Link to="/" className="nav-brand">
           <div className="brand-icon">
-            <Heart size={20} fill="#ffffff" color="#ffffff" />
+            <BinaJiwaLogo size={22} color="#ffffff" />
           </div>
           <span className="brand-name">Bina Jiwa</span>
         </Link>

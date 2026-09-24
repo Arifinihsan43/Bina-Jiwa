@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Heart, ArrowLeft, Shield, Users, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, Shield, Users, Star, Sparkles } from 'lucide-react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import AnimatedBackground from '../components/ui/AnimatedBackground';
+import BinaJiwaLogo from '../components/common/BinaJiwaLogo';
 
 export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
 
         <Link to="/" className="nav-brand">
           <div className="brand-icon">
-            <Heart size={20} fill="#ffffff" color="#ffffff" />
+            <BinaJiwaLogo size={22} color="#ffffff" />
           </div>
           <span className="brand-name">Bina Jiwa</span>
         </Link>

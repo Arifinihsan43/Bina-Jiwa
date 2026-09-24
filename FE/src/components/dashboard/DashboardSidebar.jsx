@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Heart, 
   LayoutDashboard, 
   Smile, 
   Users, 
@@ -14,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import BinaJiwaLogo from '../common/BinaJiwaLogo';
 
 export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activeMenu = 'dashboard', setActiveMenu, user, onLogout }) {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
       <div className="db-sidebar-brand">
         <Link to="/" className="db-brand-link" title="Bina Jiwa - Ruang Pulih & Diri">
           <div className="db-brand-icon">
-            <Heart size={20} fill="#ffffff" color="#ffffff" />
+            <BinaJiwaLogo size={22} color="#ffffff" />
           </div>
           <div className="db-brand-text">
             <span className="db-brand-title">Bina Jiwa</span>

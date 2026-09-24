@@ -7,6 +7,10 @@ import QuickReflectionCard from '../components/dashboard/QuickReflectionCard';
 import StatsAndScheduleGrid from '../components/dashboard/StatsAndScheduleGrid';
 import HotlineAlertCard from '../components/dashboard/HotlineAlertCard';
 import MoodReflectionPage from './MoodReflectionPage';
+import MessagesPage from './MessagesPage';
+import KomunitasPage from './KomunitasPage';
+import PsikologPage from './PsikologPage';
+import EventsPage from './EventsPage';
 import { getDashboardData, saveMoodCheckIn, saveReflection } from '../service/dashboardService';
 
 export default function DashboardPage({ user, onLogout }) {
@@ -39,6 +43,50 @@ export default function DashboardPage({ user, onLogout }) {
   if (activeMenu === 'mood') {
     return (
       <MoodReflectionPage
+        user={currentUser}
+        onLogout={onLogout}
+        activeMenu={activeMenu}
+        setActiveMenu={setActiveMenu}
+      />
+    );
+  }
+
+  if (activeMenu === 'pesan') {
+    return (
+      <MessagesPage
+        user={currentUser}
+        onLogout={onLogout}
+        activeMenu={activeMenu}
+        setActiveMenu={setActiveMenu}
+      />
+    );
+  }
+
+  if (activeMenu === 'komunitas') {
+    return (
+      <KomunitasPage
+        user={currentUser}
+        onLogout={onLogout}
+        activeMenu={activeMenu}
+        setActiveMenu={setActiveMenu}
+      />
+    );
+  }
+
+  if (activeMenu === 'psikolog') {
+    return (
+      <PsikologPage
+        user={currentUser}
+        onLogout={onLogout}
+        activeMenu={activeMenu}
+        setActiveMenu={setActiveMenu}
+      />
+    );
+  }
+
+  if (activeMenu === 'events') {
+    return (
+      <EventsPage
         user={currentUser}
         onLogout={onLogout}
         activeMenu={activeMenu}
