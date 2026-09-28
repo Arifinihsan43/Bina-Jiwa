@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 
 export default function CtaBanner() {
@@ -19,8 +20,12 @@ export default function CtaBanner() {
             </p>
 
             <div className="cta-actions">
-              <button className="btn-cta-primary">Coba Sekarang, Gratis!</button>
-              <button className="btn-cta-secondary">Konsultasi Sekarang</button>
+              <Link to="/register" className="btn-cta-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                Coba Sekarang, Gratis!
+              </Link>
+              <Link to="/login" className="btn-cta-secondary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                Konsultasi Sekarang
+              </Link>
             </div>
           </div>
         </div>

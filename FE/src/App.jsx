@@ -1,32 +1,27 @@
-import React from 'react';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import Hero from './components/ui/Hero';
-import Features from './components/ui/Features';
-import Steps from './components/ui/Steps';
-import TabFeatureShowcase from './components/ui/TabFeatureShowcase';
-import EventsSection from './components/ui/EventsSection';
-import CtaBanner from './components/ui/CtaBanner';
-import FaqSection from './components/ui/FaqSection';
-import AnimatedBackground from './components/ui/AnimatedBackground';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AppRoutes from './routes/AppRoutes';
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  const handleAuthSuccess = (userData) => {
+    setUser(userData);
+    navigate('/dashboard');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
   return (
-    <div className="app-main">
-      <AnimatedBackground />
-      <Navbar />
-      <main>
-        <Hero />
-        <Features />
-        <Steps />
-        <TabFeatureShowcase />
-        <EventsSection />
-        <CtaBanner />
-        <FaqSection />
-      </main>
-      <Footer />
-    </div>
+    <AppRoutes 
+      user={user} 
+      onAuthSuccess={handleAuthSuccess} 
+      onLogout={handleLogout} 
+    />
   );
 }
 

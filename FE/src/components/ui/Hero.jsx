@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowUpRight, Sparkles, Star } from 'lucide-react';
 
 export default function Hero() {
@@ -32,12 +33,12 @@ export default function Hero() {
           </p>
 
           <div className="hero-cta-group">
-            <button className="btn-hero-primary">
+            <Link to="/register" className="btn-hero-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Mulai Konsultasi <ArrowUpRight size={18} />
-            </button>
-            <button className="btn-hero-secondary">
+            </Link>
+            <a href="#fitur" className="btn-hero-secondary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Pelajari Fitur <ArrowUpRight size={18} />
-            </button>
+            </a>
           </div>
 
           {/* Stats Bar */}
@@ -101,5 +102,3 @@ export default function Hero() {
     </section>
   );
 }
-
-
