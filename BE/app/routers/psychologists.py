@@ -8,6 +8,7 @@ from app.schemas.psychologist import (
     AppointmentUpdate,
     PsychologistCreate,
     PsychologistOut,
+    PsychologistPublicOut,
     PsychologistUpdate,
     PsychologistVerify,
     ScheduleCreate,
@@ -21,14 +22,14 @@ router = APIRouter(tags=["psychologists"])
 
 # --- psychologists ---------------------------------------------------------
 
-@router.get("/psychologists", response_model=list[PsychologistOut])
+@router.get("/psychologists", response_model=list[PsychologistPublicOut])
 def list_psychologists(
     kota: str | None = None,
     spesialisasi: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     client: Client = Depends(get_scoped_client),
-) -> list[PsychologistOut]:
+) -> list[PsychologistPublicOut]:
     return psychologist_service.list_psychologists(client, kota, spesialisasi, limit, offset)
 
 
@@ -63,10 +64,10 @@ def update_my_psychologist_profile(
     return psychologist_service.update_own_psychologist(client, current_user.id, body)
 
 
-@router.get("/psychologists/{psychologist_id}", response_model=PsychologistOut)
+@router.get("/psychologists/{psychologist_id}", response_model=PsychologistPublicOut)
 def get_psychologist(
     psychologist_id: str, client: Client = Depends(get_scoped_client)
-) -> PsychologistOut:
+) -> PsychologistPublicOut:
     return psychologist_service.get_psychologist(client, psychologist_id)
 
 
@@ -78,7 +79,7 @@ def verify_psychologist(
     client: Client = Depends(get_scoped_client),
 ) -> PsychologistOut:
     return psychologist_service.set_verification(
-        client, psychologist_id, payload.verification_status
+        client, psychologist_id, payload.verification_status, payload.catatan
     )
 
 

@@ -1,50 +1,156 @@
 /**
  * Authentication Service
- * Handles user login, registration, and logout operations.
- * Prepared for seamless integration with real backend REST/GraphQL APIs.
+ * Handles user login, registration, logout, and session restore
+ * against the BinaJiwa backend (/auth/*).
  */
 
-export const loginService = async ({ email, password, role }) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!email || !password) {
-        reject(new Error('Email dan kata sandi wajib diisi.'));
-        return;
-      }
-      resolve({
-        id: 'usr_' + Date.now(),
-        email,
-        name: email.split('@')[0],
-        role: role || 'user',
-        token: 'mock-jwt-token-' + Date.now(),
-      });
-    }, 800);
-  });
+import { apiRequest, sessionStore, ApiError } from './apiClient';
+
+// Role di UI ('user' | 'doctor') <-> role di backend ('USER' | 'PSYCHOLOGIST' | 'ADMIN')
+const ROLE_TO_API = { user: 'USER', doctor: 'PSYCHOLOGIST' };
+const ROLE_FROM_API = { USER: 'user', PSYCHOLOGIST: 'doctor', ADMIN: 'admin' };
+
+// Pesan error Supabase Auth -> Bahasa Indonesia
+const AUTH_ERROR_MESSAGES = {
+  'Invalid login credentials': 'Email atau kata sandi salah.',
+  'Email not confirmed': 'Email belum dikonfirmasi. Silakan cek kotak masuk email Anda.',
+  'User already registered': 'Email sudah terdaftar. Silakan masuk.',
 };
 
-export const registerService = async ({ name, email, phone, password, role }) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!name || !email || !password) {
-        reject(new Error('Lengkapi seluruh bidang pendaftaran yang diperlukan.'));
-        return;
-      }
-      resolve({
-        id: 'usr_' + Date.now(),
-        name,
-        email,
-        phone,
-        role: role || 'user',
-        token: 'mock-jwt-token-' + Date.now(),
-      });
-    }, 1000);
-  });
+function translateError(err) {
+  if (err instanceof ApiError && AUTH_ERROR_MESSAGES[err.message]) {
+    return new ApiError(AUTH_ERROR_MESSAGES[err.message], err.status);
+  }
+  if (err instanceof ApiError && err.status === 429) {
+    return new ApiError('Terlalu banyak percobaan. Silakan tunggu beberapa saat.', 429);
+  }
+  return err;
+}
+
+function toUser(profile, email) {
+  return {
+    id: profile.id_user,
+    email,
+    name: profile.nama_lengkap,
+    username: profile.username,
+    role: ROLE_FROM_API[profile.role] || 'user',
+    avatar: profile.foto_profil || undefined,
+    city: profile.kota || undefined,
+  };
+}
+
+// Username wajib unik di backend: ambil dari email + akhiran acak.
+function generateUsername(email) {
+  const base = email.split('@')[0].replace(/[^a-zA-Z0-9_.]/g, '').slice(0, 40) || 'user';
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${base}_${suffix}`;
+}
+
+async function fetchProfile(accessToken) {
+  return apiRequest('/auth/me', { token: accessToken });
+}
+
+export const loginService = async ({ email, password, role, rememberMe = true }) => {
+  if (!email || !password) {
+    throw new Error('Email dan kata sandi wajib diisi.');
+  }
+
+  try {
+    const session = await apiRequest('/auth/login', {
+      method: 'POST',
+      auth: false,
+      body: { email: email.trim(), password },
+    });
+    const profile = await fetchProfile(session.access_token);
+    const user = toUser(profile, session.user.email);
+
+    // Cegah akun pengguna umum masuk lewat tab psikolog, dan sebaliknya.
+    if (profile.role !== 'ADMIN' && role && ROLE_TO_API[role] !== profile.role) {
+      throw new Error(
+        profile.role === 'PSYCHOLOGIST'
+          ? 'Akun ini terdaftar sebagai Psikolog. Pilih tab "Psikolog / Konselor" untuk masuk.'
+          : 'Akun ini terdaftar sebagai Pengguna Umum. Pilih tab "Pengguna Umum" untuk masuk.'
+      );
+    }
+
+    sessionStore.set(
+      { access_token: session.access_token, refresh_token: session.refresh_token, user },
+      rememberMe
+    );
+    return user;
+  } catch (err) {
+    throw translateError(err);
+  }
+};
+
+/**
+ * Hasil: user (langsung masuk), atau { needsEmailConfirmation: true, email }
+ * bila Supabase mewajibkan konfirmasi email terlebih dahulu.
+ */
+export const registerService = async ({ name, email, password, role }) => {
+  if (!name || !email || !password) {
+    throw new Error('Lengkapi seluruh bidang pendaftaran yang diperlukan.');
+  }
+
+  try {
+    const session = await apiRequest('/auth/register', {
+      method: 'POST',
+      auth: false,
+      body: {
+        email: email.trim(),
+        password,
+        nama_lengkap: name.trim(),
+        username: generateUsername(email.trim()),
+        role: ROLE_TO_API[role] || 'USER',
+      },
+    });
+
+    if (session.needs_email_confirmation || !session.access_token) {
+      return { needsEmailConfirmation: true, email: session.user.email };
+    }
+
+    const profile = await fetchProfile(session.access_token);
+    const user = toUser(profile, session.user.email);
+    sessionStore.set(
+      { access_token: session.access_token, refresh_token: session.refresh_token, user },
+      true
+    );
+    return user;
+  } catch (err) {
+    throw translateError(err);
+  }
 };
 
 export const logoutService = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(true);
-    }, 300);
-  });
+  const session = sessionStore.get();
+  sessionStore.clear();
+  if (!session?.access_token) return true;
+  try {
+    await apiRequest('/auth/logout', { method: 'POST', token: session.access_token });
+  } catch {
+    // Token mungkin sudah kedaluwarsa — sesi lokal tetap dihapus.
+  }
+  return true;
+};
+
+// User yang tersimpan dari sesi sebelumnya (tanpa request ke server).
+export const getCachedUser = () => sessionStore.get()?.user || null;
+
+// Validasi sesi tersimpan ke backend dan ambil profil terbaru. null bila tidak ada/invalid.
+export const restoreSession = async () => {
+  const session = sessionStore.get();
+  if (!session?.access_token) return null;
+  try {
+    const profile = await apiRequest('/auth/me');
+    const user = toUser(profile, session.user?.email);
+    sessionStore.update({ user });
+    return user;
+  } catch (err) {
+    // Hanya hapus sesi bila memang ditolak server, bukan karena backend sedang mati.
+    if (err instanceof ApiError && err.status === 401) {
+      sessionStore.clear();
+      return null;
+    }
+    return session.user || null;
+  }
 };

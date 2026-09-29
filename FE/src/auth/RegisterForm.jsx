@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, UserCheck, Stethoscope, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { registerService } from '../service/authService';
 
-export default function RegisterForm({ onSwitchToLogin, onSuccess, onClose }) {
+export default function RegisterForm({ onSwitchToLogin, onSuccess, onNeedsConfirmation }) {
   const [role, setRole] = useState('user'); // 'user' | 'doctor'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,6 +39,11 @@ export default function RegisterForm({ onSwitchToLogin, onSuccess, onClose }) {
       return;
     }
 
+    if (password.length < 8) {
+      setError('Kata sandi minimal 8 karakter.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Konfirmasi kata sandi tidak cocok.');
       return;
@@ -52,13 +57,15 @@ export default function RegisterForm({ onSwitchToLogin, onSuccess, onClose }) {
     setIsLoading(true);
 
     try {
-      const userData = await registerService({ name, email, phone, password, role });
+      // TODO: nomor WhatsApp belum disimpan — tabel profiles di backend belum punya kolomnya.
+      const result = await registerService({ name, email, phone, password, role });
       setIsLoading(false);
-      if (onSuccess) {
-        onSuccess(userData);
+      if (result.needsEmailConfirmation) {
+        if (onNeedsConfirmation) onNeedsConfirmation(result.email);
+        return;
       }
-      if (onClose) {
-        onClose();
+      if (onSuccess) {
+        onSuccess(result);
       }
     } catch (err) {
       setIsLoading(false);

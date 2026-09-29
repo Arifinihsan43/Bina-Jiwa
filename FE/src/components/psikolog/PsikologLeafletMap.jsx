@@ -3,6 +3,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, ShieldCheck, ExternalLink, Calendar, Clock, Navigation } from 'lucide-react';
 
+// Data berasal dari input psikolog — wajib di-escape sebelum masuk ke HTML Leaflet.
+const escapeHtml = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
 export default function PsikologLeafletMap({
   psychologists = [],
   activePinId,
@@ -79,7 +85,7 @@ export default function PsikologLeafletMap({
                 <circle cx="12" cy="10" r="3" fill="#ffffff"></circle>
               </svg>
             </div>
-            <span class="leaflet-pin-label">${p.name.split(',')[0]}</span>
+            <span class="leaflet-pin-label">${escapeHtml(p.name.split(',')[0])}</span>
           </div>
         `,
         iconSize: [120, 48],
@@ -92,19 +98,17 @@ export default function PsikologLeafletMap({
       const popupHtml = `
         <div class="leaflet-popup-card">
           <div class="leaflet-popup-header">
-            <img src="${p.avatar}" alt="${p.name}" class="leaflet-popup-avatar" />
             <div>
-              <div class="leaflet-popup-name">${p.name.split(',')[0]}</div>
-              <div class="leaflet-popup-clinic">${p.locationName.split(',')[0]}</div>
+              <div class="leaflet-popup-name">${escapeHtml(p.name.split(',')[0])}</div>
+              <div class="leaflet-popup-clinic">${escapeHtml(p.address || p.city)}</div>
             </div>
           </div>
           <div class="leaflet-popup-body">
             <div class="leaflet-popup-slot">
-              ${p.availableToday ? `Hari ini ${p.slots[0]}` : p.availableNext || 'Tersedia Besok'}
+              ${escapeHtml(p.availableToday ? `Hari ini ${p.slots[0]}` : p.availableNext)}
             </div>
-            <div class="leaflet-popup-fee">${p.fee}</div>
           </div>
-          <button id="popup-book-btn-${p.id}" class="leaflet-popup-btn">
+          <button id="popup-book-btn-${escapeHtml(p.id)}" class="leaflet-popup-btn">
             Rute & Buat Janji &rarr;
           </button>
         </div>

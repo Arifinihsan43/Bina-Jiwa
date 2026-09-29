@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.routers import (
+    admin,
     auth,
     chat,
     emergency,
@@ -47,6 +48,7 @@ app.include_router(notifications.router)
 app.include_router(reports.router)
 app.include_router(emergency.router)
 app.include_router(storage.router)
+app.include_router(admin.router)
 
 
 @app.get("/health", tags=["health"])

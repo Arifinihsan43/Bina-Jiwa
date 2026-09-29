@@ -5,27 +5,47 @@ from app.core.errors import not_found, run
 
 # --- psychologists ---------------------------------------------------------
 
+_PUBLIC_SELECT = "*, psychologist_schedules(*)"
+
+
+def _with_active_schedules(row: dict) -> dict:
+    schedules = row.pop("psychologist_schedules", None) or []
+    row["jadwal"] = sorted(
+        (s for s in schedules if s.get("is_active")),
+        key=lambda s: (s["hari"], s["jam_mulai"]),
+    )
+    return row
+
+
 def list_psychologists(
     client: Client, kota: str | None, spesialisasi: str | None, limit: int, offset: int
 ) -> list[dict]:
-    query = client.table("psychologists").select("*").order("nama_profesional")
+    # Hanya psikolog yang sudah dipublikasikan: diverifikasi admin dan status ACTIVE.
+    query = (
+        client.table("psychologists")
+        .select(_PUBLIC_SELECT)
+        .eq("verification_status", "VERIFIED")
+        .eq("status", "ACTIVE")
+        .order("nama_profesional")
+    )
     if kota:
-        query = query.eq("kota", kota)
+        query = query.ilike("kota", kota)
     if spesialisasi:
         query = query.ilike("spesialisasi", f"%{spesialisasi}%")
-    return run(query.range(offset, offset + limit - 1)).data
+    rows = run(query.range(offset, offset + limit - 1)).data
+    return [_with_active_schedules(row) for row in rows]
 
 
 def get_psychologist(client: Client, psychologist_id: str) -> dict:
     result = run(
         client.table("psychologists")
-        .select("*")
+        .select(_PUBLIC_SELECT)
         .eq("id_psychologist", psychologist_id)
         .maybe_single()
     )
     if not result.data:
         raise not_found("Psikolog tidak ditemukan")
-    return result.data
+    return _with_active_schedules(result.data)
 
 
 def get_own_psychologist(client: Client, user_id: str) -> dict:
@@ -53,10 +73,23 @@ def update_own_psychologist(client: Client, user_id: str, payload: dict) -> dict
     return result.data[0]
 
 
-def set_verification(client: Client, psychologist_id: str, verification_status: str) -> dict:
+def list_for_admin(
+    client: Client, verification_status: str | None, limit: int, offset: int
+) -> list[dict]:
+    # RLS mengizinkan admin melihat semua psikolog (termasuk PENDING/REJECTED).
+    query = client.table("psychologists").select("*").order("updated_at", desc=True)
+    if verification_status:
+        query = query.eq("verification_status", verification_status)
+    return run(query.range(offset, offset + limit - 1)).data
+
+
+def set_verification(
+    client: Client, psychologist_id: str, verification_status: str, catatan: str | None
+) -> dict:
+    catatan_verifikasi = catatan.strip() if verification_status == "REJECTED" and catatan else None
     result = run(
         client.table("psychologists")
-        .update({"verification_status": verification_status})
+        .update({"verification_status": verification_status, "catatan_verifikasi": catatan_verifikasi})
         .eq("id_psychologist", psychologist_id)
         .select("*")
     )

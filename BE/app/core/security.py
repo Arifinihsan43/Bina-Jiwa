@@ -1,14 +1,15 @@
+import secrets
 from functools import lru_cache
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
 from pydantic import BaseModel
 from supabase import Client
 
 from app.core.config import get_settings
-from app.core.supabase_client import get_anon_client, get_user_client
+from app.core.supabase_client import get_anon_client, get_service_client, get_user_client
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -106,6 +107,24 @@ async def get_optional_user(
     except HTTPException:
         return None
     return ctx.user
+
+
+def require_admin_key(x_admin_key: str | None = Header(default=None)) -> Client:
+    """Akses panel admin dengan kode akses (tanpa akun). Mengembalikan service client.
+
+    Kode disimpan di ADMIN_ACCESS_KEY (.env backend) dan dikirim FE lewat header
+    `X-Admin-Key`. Endpoint admin nonaktif selama variabel ini belum diisi.
+    """
+    settings = get_settings()
+    if not settings.admin_access_key:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "Panel admin belum diaktifkan (ADMIN_ACCESS_KEY kosong)"
+        )
+    if not x_admin_key or not secrets.compare_digest(
+        x_admin_key.encode(), settings.admin_access_key.encode()
+    ):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Kode akses admin salah")
+    return get_service_client()
 
 
 async def require_admin(

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, UserCheck, Stethoscope, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, UserCheck, Stethoscope, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { loginService } from '../service/authService';
 
-export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
+export default function LoginForm({ onSwitchToRegister, onSuccess, notice }) {
   const [role, setRole] = useState('user'); // 'user' | 'doctor'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,13 +23,10 @@ export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
     setIsLoading(true);
     
     try {
-      const userData = await loginService({ email, password, role });
+      const userData = await loginService({ email, password, role, rememberMe });
       setIsLoading(false);
       if (onSuccess) {
         onSuccess(userData);
-      }
-      if (onClose) {
-        onClose();
       }
     } catch (err) {
       setIsLoading(false);
@@ -68,6 +65,14 @@ export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
         </button>
       </div>
 
+      {/* Info notice (mis. setelah registrasi) */}
+      {notice && !error && (
+        <div className="auth-success-alert">
+          <CheckCircle2 size={18} />
+          <span>{notice}</span>
+        </div>
+      )}
+
       {/* Alert Error if any */}
       {error && (
         <div className="auth-error-alert">
@@ -81,15 +86,15 @@ export default function LoginForm({ onSwitchToRegister, onSuccess, onClose }) {
         {/* Email Field */}
         <div className="auth-field">
           <label className="auth-label" htmlFor="login-email">
-            Alamat Email atau No. WhatsApp
+            Alamat Email
           </label>
           <div className="auth-input-wrapper">
             <Mail className="auth-field-icon" size={19} />
             <input
               id="login-email"
-              type="text"
+              type="email"
               className="auth-input"
-              placeholder="nama@email.com atau 08123456789"
+              placeholder="nama@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

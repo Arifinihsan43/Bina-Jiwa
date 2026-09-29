@@ -1,0 +1,380 @@
+/* ==========================================================================
+   Admin - Verifikasi Psikolog
+   ========================================================================== */
+
+/* --- Layout mandiri (di luar dashboard) ----------------------------------- */
+.av-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  background-image: radial-gradient(#e2e8f0 0.75px, transparent 0.75px);
+  background-size: 24px 24px;
+}
+
+.av-page-nav {
+  max-width: 1200px;
+}
+
+.av-page-nav a {
+  text-decoration: none;
+}
+
+.av-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.av-page-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px 60px;
+}
+
+.av-gate-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.av-gate-card {
+  width: 100%;
+  max-width: 400px;
+  align-items: stretch;
+  text-align: center;
+  padding: 32px 28px;
+}
+
+.av-gate-icon {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.av-gate-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.av-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.av-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 14px;
+}
+
+.av-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.av-tab.active {
+  background: #ffffff;
+  color: #0369a1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.av-tab-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  font-size: 12px;
+  color: #334155;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.av-tab.active .av-tab-count {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.av-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 240px;
+}
+
+.av-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 340px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #94a3b8;
+}
+
+.av-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.av-search:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.av-toast {
+  margin-bottom: 0;
+}
+
+.av-toast span {
+  flex: 1;
+}
+
+.av-toast-close {
+  display: inline-flex;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+}
+
+/* --- Cards ---------------------------------------------------------------- */
+.av-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.av-card {
+  display: flex;
+  gap: 20px;
+  padding: 20px 22px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.av-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.av-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.av-name {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.av-location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.av-date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.av-license-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.av-license-grid dt {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.av-license-grid dd {
+  margin: 3px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.av-license-grid em {
+  font-style: normal;
+  font-weight: 500;
+  color: #b45309;
+}
+
+.av-doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #0284c7;
+  text-decoration: none;
+}
+
+.av-doc-link:hover {
+  text-decoration: underline;
+}
+
+.av-bio {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #475569;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- Actions -------------------------------------------------------------- */
+.av-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 170px;
+  flex-shrink: 0;
+}
+
+.av-btn-approve,
+.av-btn-reject,
+.av-btn-reject-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.av-btn-approve {
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.22);
+}
+
+.av-btn-reject {
+  border: none;
+  color: #ffffff;
+  background: #dc2626;
+}
+
+.av-btn-reject-outline {
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  background: #ffffff;
+}
+
+.av-btn-reject-outline:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.av-btn-approve:disabled,
+.av-btn-reject:disabled,
+.av-btn-reject-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.av-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 760px) {
+  .av-page-content {
+    padding: 0 16px 40px;
+  }
+
+  .av-nav-right .brand-name {
+    display: none;
+  }
+
+  .av-card {
+    flex-direction: column;
+  }
+
+  .av-card-actions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .av-card-actions > button {
+    flex: 1;
+  }
+
+  .av-license-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .av-toolbar-right {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .av-search {
+    max-width: none;
+  }
+}

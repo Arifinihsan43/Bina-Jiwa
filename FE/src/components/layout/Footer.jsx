@@ -80,6 +80,8 @@ export default function Footer() {
             <a href="/" onClick={handlePlaceholderClick()}>Syarat &amp; Ketentuan</a>
             <span>•</span>
             <a href="/" onClick={handlePlaceholderClick()}>Kebijakan Cookie</a>
+            <span>•</span>
+            <Link to="/admin">Panel Admin</Link>
           </div>
         </div>
       </div>

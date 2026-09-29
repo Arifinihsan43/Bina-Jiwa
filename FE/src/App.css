@@ -2224,6 +2224,24 @@
 }
 
 /* Alert Error */
+.auth-success-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.auth-success-alert svg {
+  flex-shrink: 0;
+}
+
 .auth-error-alert {
   display: flex;
   align-items: center;
@@ -2571,6 +2589,23 @@
   color: var(--text-main);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
+}
+
+.auth-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.auth-admin-btn {
+  text-decoration: none;
+  color: #0369a1;
+}
+
+@media (max-width: 640px) {
+  .auth-nav-right .brand-name {
+    display: none;
+  }
 }
 
 .auth-back-btn:hover {

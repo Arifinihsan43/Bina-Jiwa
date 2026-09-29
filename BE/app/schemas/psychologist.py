@@ -2,7 +2,7 @@ from datetime import datetime, time
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 VerificationStatus = Literal["PENDING", "VERIFIED", "REJECTED"]
 AppointmentStatus = Literal["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"]
@@ -38,6 +38,13 @@ class PsychologistUpdate(BaseModel):
 
 class PsychologistVerify(BaseModel):
     verification_status: Literal["VERIFIED", "REJECTED"]
+    catatan: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _require_reason_on_reject(self) -> "PsychologistVerify":
+        if self.verification_status == "REJECTED" and not (self.catatan or "").strip():
+            raise ValueError("Alasan penolakan wajib diisi")
+        return self
 
 
 class PsychologistOut(BaseModel):
@@ -55,6 +62,7 @@ class PsychologistOut(BaseModel):
     nomor_sipp: str | None = None
     dokumen_verifikasi_url: str | None = None
     verification_status: VerificationStatus
+    catatan_verifikasi: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -80,6 +88,27 @@ class ScheduleOut(BaseModel):
     jam_selesai: time
     is_active: bool
     created_at: datetime
+
+
+class PsychologistPublicOut(BaseModel):
+    """Data psikolog yang boleh dilihat user lain (tanpa dokumen verifikasi)."""
+
+    id_psychologist: str
+    id_user: str
+    nama_profesional: str
+    spesialisasi: str | None = None
+    bio: str | None = None
+    kota: str | None = None
+    alamat_praktik: str | None = None
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
+    status: Literal["ACTIVE", "INACTIVE"]
+    nomor_himpsi: str | None = None
+    nomor_sipp: str | None = None
+    verification_status: VerificationStatus
+    jadwal: list[ScheduleOut] = []
+    created_at: datetime
+    updated_at: datetime
 
 
 class AppointmentCreate(BaseModel):

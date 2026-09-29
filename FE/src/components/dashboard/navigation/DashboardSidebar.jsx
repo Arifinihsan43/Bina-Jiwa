@@ -12,7 +12,8 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Stethoscope
 } from 'lucide-react';
 import BinaJiwaLogo from '../../common/BinaJiwaLogo';
 
@@ -34,6 +35,9 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
     { id: 'events', label: 'Events & Workshop', icon: Calendar },
   ];
 
+  if (user?.role === 'doctor') {
+    navItems.push({ id: 'profil-praktik', label: 'Profil Praktik', icon: Stethoscope });
+  }
   const handleNavClick = (itemId) => {
     if (setActiveMenu) {
       setActiveMenu(itemId);

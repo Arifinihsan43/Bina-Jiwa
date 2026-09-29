@@ -1,0 +1,412 @@
+/* ==========================================================================
+   Profil Praktik Psikolog - Stylesheet
+   (melengkapi psikolog.css: hero, spec-tag, dan container dipakai ulang)
+   ========================================================================== */
+
+.pp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.pp-form-column,
+.pp-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pp-side-column {
+  position: sticky;
+  top: 0;
+}
+
+.pp-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pp-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #0284c7;
+}
+
+.pp-card-header > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.pp-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.pp-card-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.pp-muted {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* --- Fields --------------------------------------------------------------- */
+.pp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pp-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pp-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.pp-input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.pp-textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.5;
+}
+
+.pp-tags-preview {
+  margin-top: 4px;
+}
+
+/* --- Map picker ----------------------------------------------------------- */
+.pp-location-map {
+  width: 100%;
+  height: 260px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  z-index: 1;
+  cursor: crosshair;
+}
+
+.pp-location-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pp-location-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+.pp-btn-primary,
+.pp-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.pp-btn-primary {
+  padding: 14px 20px;
+  border: none;
+  font-size: 15px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
+}
+
+.pp-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.35);
+}
+
+.pp-btn-secondary {
+  padding: 9px 14px;
+  font-size: 13.5px;
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+.pp-btn-secondary:hover:not(:disabled) {
+  background: #e0f2fe;
+}
+
+.pp-btn-primary:disabled,
+.pp-btn-secondary:disabled,
+.pp-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pp-full {
+  width: 100%;
+}
+
+.pp-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+}
+
+.pp-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+}
+
+.pp-icon-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.pp-icon-btn.danger:hover:not(:disabled) {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+/* --- Banners -------------------------------------------------------------- */
+.pp-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid;
+  font-size: 13.5px;
+}
+
+.pp-banner > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pp-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-banner-compact {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+}
+
+.pp-banner-info { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+.pp-banner-success { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+.pp-banner-warning { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.pp-banner-danger { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.pp-banner-muted { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+
+/* --- Schedule ------------------------------------------------------------- */
+.pp-schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.pp-schedule-row.inactive {
+  opacity: 0.55;
+}
+
+.pp-schedule-day {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #0f172a;
+  width: 64px;
+}
+
+.pp-schedule-time {
+  flex: 1;
+  font-size: 13.5px;
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-schedule-add {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.pp-schedule-add .pp-input {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* --- Visibility toggle ---------------------------------------------------- */
+.pp-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.pp-switch {
+  appearance: none;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pp-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  transition: transform 0.2s;
+}
+
+.pp-switch:checked {
+  background: #0284c7;
+}
+
+.pp-switch:checked::after {
+  transform: translateX(20px);
+}
+
+.pp-switch:focus-visible {
+  outline: 3px solid rgba(56, 189, 248, 0.4);
+  outline-offset: 2px;
+}
+
+/* --- Avatar inisial (Cari Psikolog) --------------------------------------- */
+.psychologist-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0369a1;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+}
+
+.psikolog-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 40px 24px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.psikolog-empty-state strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .pp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-side-column {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .pp-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-schedule-add {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pp-card {
+    padding: 18px;
+  }
+}

@@ -10,6 +10,8 @@ import KomunitasPage from '../pages/KomunitasPage';
 import PsikologPage from '../pages/PsikologPage';
 import JanjiTemuPage from '../pages/JanjiTemuPage';
 import EventsPage from '../pages/EventsPage';
+import ProfilPsikologPage from '../pages/ProfilPsikologPage';
+import AdminVerifikasiPage from '../pages/AdminVerifikasiPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import DashboardLayout from '../components/dashboard/navigation/DashboardLayout';
 
@@ -27,6 +29,7 @@ export default function AppRoutes({ user, onAuthSuccess, onLogout }) {
       <Route path="/" element={<HomePage user={user} onLogout={onLogout} />} />
       <Route path="/login" element={<LoginPage onAuthSuccess={onAuthSuccess} />} />
       <Route path="/register" element={<RegisterPage onAuthSuccess={onAuthSuccess} />} />
+      <Route path="/admin" element={<AdminVerifikasiPage />} />
 
       {/* Shared Dashboard Layout Shell */}
       <Route element={<DashboardLayoutWrapper user={user} onLogout={onLogout} />}>
@@ -37,6 +40,8 @@ export default function AppRoutes({ user, onAuthSuccess, onLogout }) {
         <Route path="/psikolog" element={<PsikologPage user={user} onLogout={onLogout} />} />
         <Route path="/janji-temu" element={<JanjiTemuPage user={user} onLogout={onLogout} />} />
         <Route path="/events" element={<EventsPage user={user} onLogout={onLogout} />} />
+        <Route path="/profil-praktik" element={<ProfilPsikologPage user={user} onLogout={onLogout} />} />
+
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

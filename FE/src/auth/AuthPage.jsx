@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Users, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldCheck, Users, Star, Sparkles } from 'lucide-react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import AnimatedBackground from '../components/ui/AnimatedBackground';
@@ -28,6 +28,17 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
     navigate(newMode === 'register' ? '/register' : '/login');
   };
 
+  // Pesan info dari halaman lain, mis. setelah registrasi yang butuh konfirmasi email.
+  const notice = location.state?.notice || '';
+
+  const handleAuthSuccess = (user) => {
+    if (onAuthSuccess) {
+      onAuthSuccess(user);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   const handleBackToHome = () => {
     if (window.history.length > 2) {
       navigate(-1);
@@ -47,12 +58,18 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
           <span>Kembali ke Beranda</span>
         </button>
 
-        <Link to="/" className="nav-brand">
-          <div className="brand-icon">
-            <BinaJiwaLogo size={22} color="#ffffff" />
-          </div>
-          <span className="brand-name">Bina Jiwa</span>
-        </Link>
+        <div className="auth-nav-right">
+          <Link to="/admin" className="auth-back-btn auth-admin-btn">
+            <ShieldCheck size={16} />
+            <span>Panel Admin</span>
+          </Link>
+          <Link to="/" className="nav-brand">
+            <div className="brand-icon">
+              <BinaJiwaLogo size={22} color="#ffffff" />
+            </div>
+            <span className="brand-name">Bina Jiwa</span>
+          </Link>
+        </div>
       </header>
 
       {/* Main Container */}
@@ -130,21 +147,22 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
 
             {mode === 'login' ? (
               <LoginForm
+                notice={notice}
                 onSwitchToRegister={() => handleSwitchMode('register')}
-                onSuccess={(user) => {
-                  if (onAuthSuccess) onAuthSuccess(user);
-                  navigate('/');
-                }}
-                onClose={handleBackToHome}
+                onSuccess={handleAuthSuccess}
               />
             ) : (
               <RegisterForm
                 onSwitchToLogin={() => handleSwitchMode('login')}
-                onSuccess={(user) => {
-                  if (onAuthSuccess) onAuthSuccess(user);
-                  navigate('/');
+                onSuccess={handleAuthSuccess}
+                onNeedsConfirmation={(email) => {
+                  setMode('login');
+                  navigate('/login', {
+                    state: {
+                      notice: `Pendaftaran berhasil! Kami telah mengirim link konfirmasi ke ${email}. Konfirmasi email Anda, lalu masuk di sini.`,
+                    },
+                  });
                 }}
-                onClose={handleBackToHome}
               />
             )}
           </div>

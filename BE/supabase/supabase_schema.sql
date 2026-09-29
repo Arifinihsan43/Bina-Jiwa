@@ -193,6 +193,7 @@ create table public.psychologists (
     dokumen_verifikasi_url   varchar(500),
     verification_status      varchar(20) not null default 'PENDING'
                                 check (verification_status in ('PENDING', 'VERIFIED', 'REJECTED')),
+    catatan_verifikasi       text,
     created_at               timestamptz not null default now(),
     updated_at               timestamptz not null default now()
 );
@@ -201,6 +202,7 @@ comment on table public.psychologists is 'Data tambahan untuk profile dengan rol
 comment on column public.psychologists.nomor_himpsi is 'Nomor keanggotaan Himpunan Psikologi Indonesia (HIMPSI)';
 comment on column public.psychologists.nomor_sipp is 'Nomor Surat Izin Praktik Psikolog (SIPP)';
 comment on column public.psychologists.verification_status is 'PENDING (baru daftar), VERIFIED (sudah divalidasi admin), REJECTED (ditolak)';
+comment on column public.psychologists.catatan_verifikasi is 'Alasan penolakan dari admin (diisi saat REJECTED, dikosongkan saat diajukan ulang / VERIFIED)';
 
 -- =====================================================================
 -- 12. PSYCHOLOGIST_SCHEDULES
@@ -533,7 +535,11 @@ begin
         new.id,
         coalesce(new.raw_user_meta_data ->> 'nama_lengkap', 'Pengguna Baru'),
         coalesce(new.raw_user_meta_data ->> 'username', 'user_' || substr(new.id::text, 1, 8)),
-        coalesce(new.raw_user_meta_data ->> 'role', 'USER')
+        -- Hanya USER / PSYCHOLOGIST yang boleh dipilih saat daftar; ADMIN diset manual.
+        case
+            when new.raw_user_meta_data ->> 'role' = 'PSYCHOLOGIST' then 'PSYCHOLOGIST'
+            else 'USER'
+        end
     );
     return new;
 end;
@@ -558,11 +564,13 @@ as $$
 begin
     if auth.role() <> 'service_role' and not public.is_admin() then
         new.verification_status := old.verification_status;
+        new.catatan_verifikasi := old.catatan_verifikasi;
 
         if new.nomor_himpsi is distinct from old.nomor_himpsi
            or new.nomor_sipp is distinct from old.nomor_sipp
            or new.dokumen_verifikasi_url is distinct from old.dokumen_verifikasi_url then
             new.verification_status := 'PENDING';
+            new.catatan_verifikasi := null;
         end if;
     end if;
     return new;
@@ -572,6 +580,32 @@ $$;
 create trigger trg_protect_verification_status
     before update on public.psychologists
     for each row execute function public.protect_verification_status();
+
+-- =====================================================================
+-- FUNCTION & TRIGGER: proteksi role profile
+-- =====================================================================
+-- policy profiles_update_own mengizinkan user mengubah baris sendiri,
+-- jadi kolom role harus dijaga agar user tidak bisa menjadikan dirinya
+-- ADMIN lewat API. Perubahan lewat Dashboard / SQL Editor tetap boleh.
+create or replace function public.protect_profile_role()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if new.role is distinct from old.role
+       and coalesce(auth.role(), '') in ('anon', 'authenticated')
+       and not public.is_admin() then
+        raise exception 'Tidak diizinkan mengubah role akun'
+            using errcode = '42501';
+    end if;
+    return new;
+end;
+$$;
+
+create trigger trg_protect_profile_role
+    before update on public.profiles
+    for each row execute function public.protect_profile_role();
 
 -- =====================================================================
 -- FUNCTION: find_or_create_conversation
