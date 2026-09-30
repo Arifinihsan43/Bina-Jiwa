@@ -1,75 +1,76 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, HelpCircle, Check, Plus, AlertCircle } from 'lucide-react';
-import { getTodayDateKey, getStoredMoodLogs } from '../../../service/dashboardService';
-import MoodDetailModal from '../modals/MoodDetailModal';
+import React from 'react';
+import { ChevronLeft, ChevronRight, HelpCircle, Check, Plus } from 'lucide-react';
 
-export default function MoodCalendarGrid({ onOpenCheckIn }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [moodLogs, setMoodLogs] = useState(getStoredMoodLogs());
-  const [selectedLogDetail, setSelectedLogDetail] = useState(null);
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth(); // 0-indexed
+const pad = (n) => String(n).padStart(2, '0');
 
-  const monthNames = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
+/**
+ * Kalender mood satu bulan.
+ * - year, month (0-11): bulan yang ditampilkan
+ * - logs: { 'YYYY-MM-DD': log } untuk bulan tsb
+ * - todayKey: 'YYYY-MM-DD' hari ini (WIB)
+ */
+export default function MoodCalendarGrid({
+  year,
+  month,
+  logs,
+  loading,
+  todayKey,
+  onPrevMonth,
+  onNextMonth,
+  onOpenCheckIn,
+  onSelectDay,
+}) {
+  const monthKey = `${year}-${pad(month + 1)}`;
+  const isCurrentOrFutureMonth = monthKey >= todayKey.slice(0, 7);
 
-  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const firstDayIndex = new Date(Date.UTC(year, month, 1)).getUTCDay(); // 0 = Minggu
+  const totalDays = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const prevMonthDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-  const prevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-  };
+  const todayLog = logs[todayKey];
+  const isTodayFilled = Boolean(todayLog);
 
-  const nextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-  };
-
-  // Calculate calendar grid cells
-  const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sun
-  const totalDays = new Date(year, month + 1, 0).getDate();
-  const prevMonthDays = new Date(year, month, 0).getDate();
-
-  const today = new Date();
-  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
-  const todayDateNum = today.getDate();
-  const todayKey = getTodayDateKey();
-
-  const isTodayFilled = Boolean(moodLogs[todayKey]);
-  const todayLog = moodLogs[todayKey];
-
-  // Count filled days this month
-  let filledCount = 0;
-  for (let d = 1; d <= totalDays; d++) {
-    const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    if (moodLogs[key]) filledCount++;
-  }
-  const filledPercentage = Math.round((filledCount / totalDays) * 100);
-
-  const refreshLogs = () => {
-    setMoodLogs(getStoredMoodLogs());
-  };
+  // Persentase dihitung dari hari yang sudah lewat (termasuk hari ini), bukan seluruh bulan.
+  const elapsedDays = Array.from({ length: totalDays }, (_, i) => `${monthKey}-${pad(i + 1)}`)
+    .filter((key) => key <= todayKey).length;
+  const filledCount = Object.keys(logs).filter((key) => key.startsWith(monthKey)).length;
+  const filledPercentage = elapsedDays ? Math.round((filledCount / elapsedDays) * 100) : 0;
 
   return (
     <div className="mc-calendar-card">
       {/* Calendar Header Controls */}
       <div className="mc-cal-top-bar">
         <div className="mc-cal-nav">
-          <button type="button" className="mc-cal-arrow" onClick={prevMonth} title="Bulan Sebelumnya">
+          <button type="button" className="mc-cal-arrow" onClick={onPrevMonth} title="Bulan Sebelumnya">
             <ChevronLeft size={16} />
           </button>
           <span className="mc-cal-month-title">
-            🗓️ {monthNames[month]} {year}
+            🗓️ {MONTH_NAMES[month]} {year}
           </span>
-          <button type="button" className="mc-cal-arrow" onClick={nextMonth} title="Bulan Selanjutnya">
+          <button
+            type="button"
+            className="mc-cal-arrow"
+            onClick={onNextMonth}
+            title="Bulan Selanjutnya"
+            disabled={isCurrentOrFutureMonth}
+          >
             <ChevronRight size={16} />
           </button>
         </div>
 
         <div className="mc-cal-stat-pill">
           <span className="mc-stat-dot">●</span>
-          <span>{filledCount} Hari Terisi Bulan Ini ({filledPercentage}%)</span>
+          <span>
+            {loading
+              ? 'Memuat…'
+              : `${filledCount} Hari Terisi Bulan Ini${elapsedDays ? ` (${filledPercentage}%)` : ''}`}
+          </span>
         </div>
       </div>
 
@@ -81,14 +82,14 @@ export default function MoodCalendarGrid({ onOpenCheckIn }) {
           <span className="mc-legend-item legend-tenang">● Tenang</span>
           <span className="mc-legend-item legend-bahagia">● Bahagia</span>
           <span className="mc-legend-item legend-biasa">● Biasa</span>
-          <span className="mc-legend-item legend-cemas">● Cemas</span>
+          <span className="mc-legend-item legend-cemas">● Cemas / Lelah</span>
           <span className="mc-legend-item legend-sedih">● Sedih</span>
         </div>
       </div>
 
       {/* Days of Week Header */}
       <div className="mc-grid-header">
-        {dayNames.map((day, idx) => (
+        {DAY_NAMES.map((day, idx) => (
           <div key={day} className={`mc-grid-day-name ${idx === 0 ? 'sunday' : ''}`}>
             {day}
           </div>
@@ -97,50 +98,41 @@ export default function MoodCalendarGrid({ onOpenCheckIn }) {
 
       {/* Calendar Days Cells Grid */}
       <div className="mc-grid-body">
-        {/* Empty cells from previous month */}
-        {Array.from({ length: firstDayIndex }).map((_, idx) => {
-          const prevDate = prevMonthDays - firstDayIndex + idx + 1;
-          return (
-            <div key={`prev-${idx}`} className="mc-cell muted">
-              <span className="mc-cell-num">{prevDate}</span>
-            </div>
-          );
-        })}
+        {Array.from({ length: firstDayIndex }).map((_, idx) => (
+          <div key={`prev-${idx}`} className="mc-cell muted">
+            <span className="mc-cell-num">{prevMonthDays - firstDayIndex + idx + 1}</span>
+          </div>
+        ))}
 
-        {/* Current month days */}
         {Array.from({ length: totalDays }).map((_, idx) => {
           const dayNum = idx + 1;
-          const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-          const log = moodLogs[dateKey];
-          const isToday = isCurrentMonth && dayNum === todayDateNum;
-          const isPast = isCurrentMonth ? dayNum < todayDateNum : year < today.getFullYear() || (year === today.getFullYear() && month < today.getMonth());
-          const isFuture = isCurrentMonth ? dayNum > todayDateNum : year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth());
+          const dateKey = `${monthKey}-${pad(dayNum)}`;
+          const log = logs[dateKey];
+          const isToday = dateKey === todayKey;
+          const isFuture = dateKey > todayKey;
 
           return (
             <div
               key={dateKey}
               className={`mc-cell ${isToday ? 'today' : ''} ${log ? 'filled' : ''} ${isFuture ? 'future' : ''}`}
-              style={log ? { backgroundColor: isToday ? '#0284c7' : log.color, cursor: log ? 'pointer' : 'default' } : {}}
-              onClick={() => {
-                if (log) {
-                  setSelectedLogDetail({ dateKey, dayNum, year, month, log });
-                }
-              }}
-              title={log ? "Klik untuk melihat detail riwayat check-in" : ""}
+              style={log ? { backgroundColor: isToday ? '#0284c7' : log.color, cursor: 'pointer' } : {}}
+              onClick={() => log && onSelectDay(dateKey)}
+              onKeyDown={(e) => log && (e.key === 'Enter' || e.key === ' ') && onSelectDay(dateKey)}
+              role={log ? 'button' : undefined}
+              tabIndex={log ? 0 : undefined}
+              title={log ? 'Klik untuk melihat detail check-in' : ''}
             >
               <div className="mc-cell-top">
                 <span className={`mc-cell-num ${isToday ? 'today-num' : ''}`}>
                   {dayNum} {isToday ? <span className="mc-today-tag">Hari ini</span> : null}
                 </span>
-                {log && <span className="mc-cell-icon">{log.icon || '😊'}</span>}
+                {log && <span className="mc-cell-icon">{log.icon}</span>}
               </div>
 
               {log ? (
                 <div className="mc-cell-mood-info">
-                  <span className={`mc-cell-mood-text ${isToday ? 'today-text' : ''}`}>
-                    {log.mood || log.type}
-                  </span>
-                  {log.intensity && <span className="mc-cell-score">Skor {log.intensity}/5</span>}
+                  <span className={`mc-cell-mood-text ${isToday ? 'today-text' : ''}`}>{log.mood}</span>
+                  <span className="mc-cell-score">Skor {log.intensity}/5</span>
                 </div>
               ) : isToday ? (
                 <div className="mc-cell-today-action">
@@ -149,17 +141,18 @@ export default function MoodCalendarGrid({ onOpenCheckIn }) {
                     className="mc-today-fill-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (onOpenCheckIn) onOpenCheckIn();
+                      onOpenCheckIn();
                     }}
+                    disabled={loading}
                   >
                     <Plus size={14} />
                     <span>Isi Mood</span>
                   </button>
                 </div>
               ) : isFuture ? (
-                <div className="mc-cell-future-label">Rencana</div>
+                <div className="mc-cell-future-label">—</div>
               ) : (
-                <div className="mc-cell-empty-label">Belum diisi</div>
+                <div className="mc-cell-empty-label">{loading ? '' : 'Belum diisi'}</div>
               )}
             </div>
           );
@@ -172,21 +165,16 @@ export default function MoodCalendarGrid({ onOpenCheckIn }) {
           <HelpCircle size={18} color="#0284c7" />
           <span>
             {isTodayFilled
-              ? `Hari ini kamu telah mencatat mood: "${todayLog?.mood || 'Tenang'}". Catatan hari ini telah terkunci.`
+              ? `Hari ini kamu telah mencatat mood: "${todayLog.mood}". Catatan hari ini telah terkunci.`
               : 'Hari ini belum diisi. Luangkan waktu sejenak untuk mendengarkan perasaanmu.'}
           </span>
         </div>
 
         <button
           type="button"
-          className={`mc-btn-update ${isTodayFilled ? 'disabled' : ''}`}
-          onClick={() => {
-            if (isTodayFilled) {
-              setSelectedLogDetail({ dateKey: todayKey, dayNum: todayDateNum, year, month, log: todayLog });
-            } else if (onOpenCheckIn) {
-              onOpenCheckIn();
-            }
-          }}
+          className="mc-btn-update"
+          onClick={() => (isTodayFilled ? onSelectDay(todayKey) : onOpenCheckIn())}
+          disabled={loading}
         >
           {isTodayFilled ? (
             <>
@@ -196,19 +184,11 @@ export default function MoodCalendarGrid({ onOpenCheckIn }) {
           ) : (
             <>
               <Plus size={16} />
-              <span>Perbarui Mood Hari Ini</span>
+              <span>Isi Mood Hari Ini</span>
             </>
           )}
         </button>
       </div>
-
-      {/* Detail History Modal Popup */}
-      {selectedLogDetail && (
-        <MoodDetailModal
-          logData={selectedLogDetail}
-          onClose={() => setSelectedLogDetail(null)}
-        />
-      )}
     </div>
   );
 }

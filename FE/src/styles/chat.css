@@ -906,6 +906,124 @@
   transform: scale(0.95);
 }
 
+/* --- Pesan (data asli) ---------------------------------------------------- */
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-link {
+  color: #0369a1;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.read-status-icon.unread {
+  color: #94a3b8;
+}
+
+.chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-list-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 20px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.chat-list-note.error {
+  color: #dc2626;
+}
+
+.chat-list-empty,
+.chat-window-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.chat-window-empty {
+  flex: 1;
+}
+
+.chat-list-empty strong,
+.chat-window-empty strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.chat-empty-btn {
+  margin-top: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #0284c7;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-template-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 20px 0;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.chat-template-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #bae6fd;
+  border-radius: 999px;
+  background: #f0f9ff;
+  color: #0369a1;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-template-chip:hover {
+  background: #e0f2fe;
+}
+
+.chat-send-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px 0;
+  background: #ffffff;
+  font-size: 12.5px;
+  color: #dc2626;
+}
+
+.chat-closed-note {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+}
+
 /* Responsive adjust */
 @media (max-width: 900px) {
   .chat-sidebar-panel {

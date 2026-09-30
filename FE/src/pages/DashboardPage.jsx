@@ -5,59 +5,104 @@ import {
   MoodCheckInCard,
   QuickReflectionCard,
   StatsAndScheduleGrid,
-  HotlineAlertCard
+  HotlineAlertCard,
 } from '../components/dashboard';
-import { getDashboardData, saveMoodCheckIn, saveReflection } from '../service/dashboardService';
+import {
+  addDaysKey,
+  getMoodLogs,
+  getReflections,
+  promptOfTheDay,
+  saveReflection,
+  saveTodayMood,
+  summarize,
+  wibDateKey,
+} from '../service/moodService';
+import { listMyAppointments } from '../service/appointmentService';
+
+// Cukup panjang untuk menghitung streak menuju target 14 hari & perbandingan mingguan.
+const HISTORY_DAYS = 60;
 
 export default function DashboardPage({ user }) {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [todayKey] = useState(() => wibDateKey());
+  const [question] = useState(() => promptOfTheDay());
+  const [logs, setLogs] = useState({});
+  const [loadingMood, setLoadingMood] = useState(true);
+  const [reflectionsToday, setReflectionsToday] = useState(0);
+  const [upcoming, setUpcoming] = useState(null);
+  const [loadingSession, setLoadingSession] = useState(true);
 
   useEffect(() => {
-    getDashboardData().then((data) => {
-      setDashboardData(data);
-      setIsLoading(false);
-    });
-  }, []);
+    let cancelled = false;
+    getMoodLogs(addDaysKey(todayKey, -(HISTORY_DAYS - 1)), todayKey)
+      .then((rows) => {
+        if (!cancelled) setLogs(rows);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingMood(false);
+      });
 
-  const handleSaveMood = async (moodData) => {
-    await saveMoodCheckIn(moodData);
+    getReflections(todayKey, todayKey)
+      .then((rows) => {
+        if (!cancelled) setReflectionsToday(rows.length);
+      })
+      .catch(() => {});
+
+    listMyAppointments()
+      .then((rows) => {
+        if (cancelled) return;
+        const now = Date.now();
+        const next = rows
+          .filter((a) => ['PENDING', 'CONFIRMED'].includes(a.status) && new Date(a.tanggal_selesai).getTime() > now)
+          .sort((a, b) => new Date(a.tanggal_mulai) - new Date(b.tanggal_mulai))[0];
+        setUpcoming(next || null);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingSession(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [todayKey]);
+
+  const handleSaveMood = async (data) => {
+    const log = await saveTodayMood(data);
+    setLogs((prev) => ({ ...prev, [log.dateKey]: log }));
   };
 
-  const handleSaveReflectionText = async (text) => {
-    await saveReflection(text);
+  const handleSaveReflection = async (q, text) => {
+    await saveReflection(q, text);
+    setReflectionsToday((n) => n + 1);
   };
 
-  const currentUser = user || dashboardData?.user;
+  const summary = summarize(logs, todayKey);
 
   return (
     <div className="db-main-content">
-      <DashboardHeader dateInfo={dashboardData?.dateInfo} />
+      <DashboardHeader />
 
       <div className="db-scrollable-body">
-        {/* Top Hero Banner */}
-        <DashboardHeroBanner user={currentUser} />
+        <DashboardHeroBanner user={user} weeklyAverage={loadingMood ? null : summary.weekly.average} />
 
-        {/* Middle Row: Mood Check-in (Left) + Quick Reflection (Right) */}
         <div className="db-middle-grid">
           <MoodCheckInCard
-            initialData={dashboardData?.moodCheckIn}
+            todayLog={logs[todayKey] || null}
+            loading={loadingMood}
             onSave={handleSaveMood}
+            showCalendarLink
           />
-          <QuickReflectionCard
-            initialPrompt={dashboardData?.reflection?.question}
-            onSave={handleSaveReflectionText}
-          />
+          <QuickReflectionCard question={question} onSave={handleSaveReflection} savedToday={reflectionsToday} />
         </div>
 
-        {/* Bottom Grid: Stats (2 cards) + Upcoming Session (1 card) */}
         <StatsAndScheduleGrid
-          weeklyStats={dashboardData?.weeklyStats}
-          consistency={dashboardData?.consistency}
-          upcomingSession={dashboardData?.upcomingSession}
+          summary={summary}
+          loading={loadingMood || loadingSession}
+          upcoming={upcoming}
+          userId={user?.id}
         />
 
-        {/* Hotline Emergency Alert Card */}
         <HotlineAlertCard />
       </div>
     </div>

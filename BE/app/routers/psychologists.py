@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query, status
 from supabase import Client
 
@@ -6,6 +8,7 @@ from app.schemas.psychologist import (
     AppointmentCreate,
     AppointmentOut,
     AppointmentUpdate,
+    BusySlotOut,
     PsychologistCreate,
     PsychologistOut,
     PsychologistPublicOut,
@@ -132,6 +135,16 @@ def delete_my_schedule(
 
 # --- appointments ---------------------------------------------------------
 
+@router.get("/psychologists/{psychologist_id}/busy", response_model=list[BusySlotOut])
+def list_busy_slots(
+    psychologist_id: str,
+    tanggal: date,
+    _: CurrentUser = Depends(get_current_user),
+) -> list[BusySlotOut]:
+    """Jam yang sudah dipesan pada tanggal tsb (WIB) — untuk menyembunyikan slot penuh."""
+    return psychologist_service.list_busy_slots(psychologist_id, tanggal)
+
+
 @router.get("/appointments", response_model=list[AppointmentOut])
 def list_my_appointments(
     limit: int = Query(default=20, ge=1, le=100),
@@ -147,9 +160,7 @@ def create_appointment(
     current_user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_scoped_client),
 ) -> AppointmentOut:
-    return psychologist_service.create_appointment(
-        client, current_user.id, payload.model_dump(mode="json")
-    )
+    return psychologist_service.create_appointment(client, current_user.id, payload)
 
 
 @router.get("/appointments/{appointment_id}", response_model=AppointmentOut)
@@ -163,7 +174,8 @@ def get_appointment(
 def update_appointment(
     appointment_id: str,
     payload: AppointmentUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_scoped_client),
 ) -> AppointmentOut:
     body = payload.model_dump(mode="json", exclude_unset=True)
-    return psychologist_service.update_appointment(client, appointment_id, body)
+    return psychologist_service.update_appointment(client, current_user.id, appointment_id, body)

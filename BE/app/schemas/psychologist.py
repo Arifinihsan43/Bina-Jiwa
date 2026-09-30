@@ -116,14 +116,25 @@ class AppointmentCreate(BaseModel):
     tanggal_mulai: datetime
     tanggal_selesai: datetime
     type: SessionType
-    lokasi: str | None = None
-    catatan: str | None = None
+    # lokasi ditentukan server (alamat praktik / sesi online), bukan oleh pemesan.
+    catatan: str | None = Field(default=None, max_length=1000)
 
 
 class AppointmentUpdate(BaseModel):
     status: AppointmentStatus | None = None
-    catatan: str | None = None
-    lokasi: str | None = None
+    catatan: str | None = Field(default=None, max_length=1000)
+    lokasi: str | None = Field(default=None, max_length=500)
+
+
+class AppointmentPsychologistInfo(BaseModel):
+    nama_profesional: str
+    kota: str | None = None
+    alamat_praktik: str | None = None
+
+
+class AppointmentClientInfo(BaseModel):
+    nama_lengkap: str
+    username: str | None = None
 
 
 class AppointmentOut(BaseModel):
@@ -136,5 +147,12 @@ class AppointmentOut(BaseModel):
     lokasi: str | None = None
     catatan: str | None = None
     status: AppointmentStatus
+    psikolog: AppointmentPsychologistInfo | None = None
+    klien: AppointmentClientInfo | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class BusySlotOut(BaseModel):
+    tanggal_mulai: datetime
+    tanggal_selesai: datetime

@@ -1,19 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DashboardHeader } from '../components/dashboard';
 import PsikologLeafletMap from '../components/psikolog/PsikologLeafletMap';
+import BookingModal from '../components/psikolog/BookingModal';
 import '../styles/psikolog.css';
 import '../styles/profil-psikolog.css';
 import {
   Search,
   MapPin,
   Calendar,
-  Clock,
   MessageSquare,
   ShieldCheck,
-  Video,
   ChevronDown,
   Lock,
-  CheckCircle2,
   X,
   SlidersHorizontal,
   AlertCircle,
@@ -59,10 +57,6 @@ export default function PsikologPage() {
   const [selectedPsikologModal, setSelectedPsikologModal] = useState(null);
   const [infoModalPsikolog, setInfoModalPsikolog] = useState(null);
   const [activePinId, setActivePinId] = useState(null);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [selectedSlot, setSelectedSlot] = useState('');
-  const [selectedMode, setSelectedMode] = useState('offline');
 
   useEffect(() => {
     let cancelled = false;
@@ -125,28 +119,7 @@ export default function PsikologPage() {
 
   const handleOpenBooking = (psikolog) => {
     setSelectedPsikologModal(psikolog);
-    setSelectedSlot(psikolog.slots[0] || '');
-    setBookingSuccess(false);
   };
-
-  const handleConfirmBooking = (e) => {
-    e.preventDefault();
-    // TODO: sambungkan ke POST /appointments (fitur Janji Temu).
-    setBookingSuccess(true);
-    setTimeout(() => {
-      setSelectedPsikologModal(null);
-      setBookingSuccess(false);
-    }, 2200);
-  };
-
-  // Slot untuk tanggal yang dipilih di modal booking, berdasarkan jadwal mingguan.
-  const bookingSlots = useMemo(() => {
-    if (!selectedPsikologModal || !selectedDate) return [];
-    const hari = ((new Date(`${selectedDate}T00:00:00`).getDay() + 6) % 7) + 1;
-    return selectedPsikologModal.jadwal
-      .filter((s) => s.hari === hari)
-      .map((s) => `${formatTime(s.jam_mulai)}–${formatTime(s.jam_selesai)}`);
-  }, [selectedPsikologModal, selectedDate]);
 
   const chips = [CHIP_ALL, CHIP_TODAY, ...topTags];
 
@@ -447,101 +420,10 @@ export default function PsikologPage() {
 
       {/* Booking Modal */}
       {selectedPsikologModal && (
-        <div className="modal-backdrop" onClick={() => setSelectedPsikologModal(null)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-header-info">
-                <h3 className="modal-title">Buat Janji Konsultasi</h3>
-                <span className="modal-sub">{selectedPsikologModal.name}</span>
-              </div>
-              <button
-                type="button"
-                className="close-modal-btn"
-                onClick={() => setSelectedPsikologModal(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {bookingSuccess ? (
-              <div className="booking-success-state">
-                <div className="success-icon-circle">
-                  <CheckCircle2 size={40} className="text-emerald-500" />
-                </div>
-                <h4 className="success-title">Janji Konsultasi Berhasil Dibuat!</h4>
-                <p className="success-sub">
-                  Konfirmasi sesi dan rincian lokasi/link video call telah dikirimkan ke email dan pesan akun Anda.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleConfirmBooking} className="booking-form">
-                <div className="form-group">
-                  <label className="form-label">Mode Sesi Konsultasi</label>
-                  <div className="mode-toggle-group">
-                    <button
-                      type="button"
-                      className={`mode-btn ${selectedMode === 'offline' ? 'active' : ''}`}
-                      onClick={() => setSelectedMode('offline')}
-                    >
-                      <MapPin size={15} /> Tatap Muka (Klinik)
-                    </button>
-                    <button
-                      type="button"
-                      className={`mode-btn ${selectedMode === 'online' ? 'active' : ''}`}
-                      onClick={() => setSelectedMode('online')}
-                    >
-                      <Video size={15} /> Online Video Call HD
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Pilih Tanggal Sesi</label>
-                  <input
-                    type="date"
-                    className="form-input-date"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
-                      setSelectedSlot('');
-                    }}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Pilih Jam Praktik yang Tersedia</label>
-                  <div className="slot-chips-group">
-                    {bookingSlots.length === 0 && (
-                      <span className="pp-muted">Tidak ada jadwal praktik di tanggal ini.</span>
-                    )}
-                    {bookingSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        className={`slot-chip-btn ${selectedSlot === slot ? 'active' : ''}`}
-                        onClick={() => setSelectedSlot(slot)}
-                      >
-                        <Clock size={13} /> {slot}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="modal-summary-box">
-                  <div className="summary-row">
-                    <span>Beban Garansi Privasi</span>
-                    <span className="text-emerald-600 font-semibold">Gratis (Terlindungi)</span>
-                  </div>
-                </div>
-
-                <button type="submit" className="confirm-booking-submit-btn" disabled={!selectedSlot}>
-                  Konfirmasi Janji Konsultasi
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
+        <BookingModal
+          psychologist={selectedPsikologModal}
+          onClose={() => setSelectedPsikologModal(null)}
+        />
       )}
 
       {/* Info / Profil Modal */}

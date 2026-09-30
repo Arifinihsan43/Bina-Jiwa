@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query, status
 from supabase import Client
 
@@ -20,10 +22,12 @@ router = APIRouter(prefix="/wellness", tags=["wellness"])
 def list_moods(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    dari: date | None = Query(default=None, description="Tanggal awal (WIB), inklusif"),
+    sampai: date | None = Query(default=None, description="Tanggal akhir (WIB), inklusif"),
     current_user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_scoped_client),
 ) -> list[MoodEntryOut]:
-    return wellness_service.list_moods(client, current_user.id, limit, offset)
+    return wellness_service.list_moods(client, current_user.id, limit, offset, dari, sampai)
 
 
 @router.post("/moods", response_model=MoodEntryOut, status_code=status.HTTP_201_CREATED)
@@ -69,10 +73,12 @@ def delete_mood(
 def list_journals(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    dari: date | None = Query(default=None, description="Tanggal awal (WIB), inklusif"),
+    sampai: date | None = Query(default=None, description="Tanggal akhir (WIB), inklusif"),
     current_user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_scoped_client),
 ) -> list[JournalOut]:
-    return wellness_service.list_journals(client, current_user.id, limit, offset)
+    return wellness_service.list_journals(client, current_user.id, limit, offset, dari, sampai)
 
 
 @router.post("/journals", response_model=JournalOut, status_code=status.HTTP_201_CREATED)

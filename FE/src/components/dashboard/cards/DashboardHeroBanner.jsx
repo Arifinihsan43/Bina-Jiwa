@@ -1,8 +1,17 @@
 import React from 'react';
 import { Sparkles, HeartPulse } from 'lucide-react';
 
-export default function DashboardHeroBanner({ user }) {
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Rani';
+// Label singkat dari indeks suasana hati 7 hari (0–100, 50 = netral).
+const balanceLabel = (avg) => {
+  if (avg === null || avg === undefined) return 'Mulai check-in harianmu';
+  if (avg >= 70) return 'Stabil & Bertumbuh';
+  if (avg >= 55) return 'Cukup Seimbang';
+  if (avg >= 40) return 'Naik Turun Wajar';
+  return 'Butuh Ruang Istirahat';
+};
+
+export default function DashboardHeroBanner({ user, weeklyAverage = null }) {
+  const firstName = user?.name ? user.name.split(' ')[0] : '';
 
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
@@ -29,7 +38,7 @@ export default function DashboardHeroBanner({ user }) {
         </div>
 
         <h1 className="db-hero-title">
-          {greeting}, {firstName}! Bagaimana perasaanmu hari ini?
+          {greeting}{firstName ? `, ${firstName}` : ''}! Bagaimana perasaanmu hari ini?
         </h1>
 
         <p className="db-hero-subtitle">
@@ -44,7 +53,7 @@ export default function DashboardHeroBanner({ user }) {
           </div>
           <div className="db-widget-text">
             <span className="db-widget-label">INDEKS KESEIMBANGAN</span>
-            <span className="db-widget-value">Stabil &amp; Bertumbuh</span>
+            <span className="db-widget-value">{balanceLabel(weeklyAverage)}</span>
           </div>
         </div>
       </div>

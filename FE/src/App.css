@@ -4312,6 +4312,176 @@
   height: 180px;
 }
 
+/* --- Tren suasana hati (data asli) ---------------------------------------- */
+.mc-trend-wrapper {
+  padding: 20px 20px 12px 88px;
+}
+
+.mc-trend-plot {
+  position: relative;
+}
+
+.mc-trend-plot .mc-wave-svg {
+  display: block;
+  overflow: visible;
+}
+
+.mc-trend-ylabel {
+  position: absolute;
+  left: -72px;
+  width: 64px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.mc-trend-ylabel.top { top: 8%; }
+.mc-trend-ylabel.mid { top: 51%; color: #64748b; }
+.mc-trend-ylabel.bottom { top: 94%; }
+
+.mc-trend-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #0284c7;
+  box-shadow: 0 0 0 2px #f8fafc;
+  pointer-events: none;
+  transition: transform 0.12s ease;
+}
+
+.mc-trend-dot.active {
+  transform: scale(1.5);
+}
+
+.mc-trend-tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+  font-size: 12px;
+  color: #334155;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mc-trend-tooltip.left {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.mc-trend-tooltip strong {
+  color: #0f172a;
+  font-size: 12.5px;
+}
+
+.mc-trend-tooltip .muted {
+  color: #94a3b8;
+}
+
+.mc-trend-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.mc-trend-xlabels {
+  position: relative;
+  display: block;
+  height: 16px;
+  margin: 8px 0 0;
+}
+
+.mc-trend-xlabels span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.mc-trend-xlabels span:first-child { transform: none; }
+.mc-trend-xlabels span:last-child { transform: translateX(-100%); }
+
+.mc-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .mc-trend-wrapper {
+    padding-left: 20px;
+  }
+
+  .mc-trend-ylabel {
+    display: none;
+  }
+}
+
+/* --- Check-in & detail mood ---------------------------------------------- */
+.db-mood-note {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 0;
+  resize: vertical;
+}
+
+.db-mood-note-readonly {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 13.5px;
+  font-style: italic;
+  color: #475569;
+}
+
+.db-mood-btn:disabled,
+.db-chip:disabled,
+.db-intensity-slider:disabled {
+  cursor: default;
+}
+
+.db-mood-btn:disabled:not(.selected),
+.db-chip:disabled:not(.selected) {
+  opacity: 0.55;
+}
+
+.mc-cal-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mc-detail-note-question {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.mc-detail-empty {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
 .mc-insight-box {
   background: #f0f9ff;
   border: 1px solid #e0f2fe;
@@ -4672,3 +4842,21 @@
 
 
 
+
+/* --- Statistik dashboard (data asli) --------------------------------------- */
+.db-stat-unit {
+  margin-left: 4px;
+  font-size: 0.45em;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.db-doctor-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0369a1;
+  font-weight: 800;
+  font-size: 18px;
+}

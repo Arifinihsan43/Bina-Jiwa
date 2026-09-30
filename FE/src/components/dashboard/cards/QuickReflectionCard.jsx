@@ -1,23 +1,36 @@
 import React, { useState } from 'react';
-import { Edit3, CheckCircle } from 'lucide-react';
+import { Edit3, AlertCircle } from 'lucide-react';
 
-export default function QuickReflectionCard({ initialPrompt, onSave }) {
+const MAX_WORDS = 250;
+
+/**
+ * Refleksi cepat harian, disimpan sebagai jurnal pribadi.
+ * - onSave(question, text): Promise
+ * - savedToday: jumlah refleksi yang sudah ditulis hari ini
+ */
+export default function QuickReflectionCard({ question, onSave, savedToday = 0 }) {
   const [reflectionText, setReflectionText] = useState('');
-  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const [error, setError] = useState('');
 
-  const question = initialPrompt || '“Satu hal kecil apa yang patut kamu syukuri dan hangatkan hatimu pagi ini?”';
   const wordCount = reflectionText.trim() ? reflectionText.trim().split(/\s+/).length : 0;
-  const maxWords = 250;
+  const overLimit = wordCount > MAX_WORDS;
 
-  const handleSave = () => {
-    if (!reflectionText.trim()) return;
-    setIsSaved(true);
-    if (onSave) onSave(reflectionText);
-    setTimeout(() => setIsSaved(false), 2500);
-  };
-
-  const handleLater = () => {
-    setReflectionText('');
+  const handleSave = async () => {
+    if (!reflectionText.trim() || overLimit || saving) return;
+    setSaving(true);
+    setError('');
+    try {
+      await onSave(question, reflectionText);
+      setReflectionText('');
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 2500);
+    } catch (err) {
+      setError(err.message || 'Gagal menyimpan refleksi.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -29,13 +42,15 @@ export default function QuickReflectionCard({ initialPrompt, onSave }) {
           </div>
           <h2 className="db-card-title">Refleksi Cepat Harian</h2>
         </div>
-        <span className="db-badge db-badge-cyan-soft">Ruang Bebas</span>
+        <span className="db-badge db-badge-cyan-soft">
+          {savedToday > 0 ? `${savedToday} refleksi hari ini` : 'Ruang Bebas'}
+        </span>
       </div>
 
       {/* Guided Prompt Card */}
       <div className="db-guided-prompt-box">
-        <span className="db-prompt-tag">PERTANYAAN PANDUAN</span>
-        <p className="db-prompt-text">{question}</p>
+        <span className="db-prompt-tag">PERTANYAAN PANDUAN HARI INI</span>
+        <p className="db-prompt-text">“{question}”</p>
       </div>
 
       {/* Reflection Textarea Input */}
@@ -46,25 +61,40 @@ export default function QuickReflectionCard({ initialPrompt, onSave }) {
           onChange={(e) => setReflectionText(e.target.value)}
           placeholder="Tuliskan dengan bebas, tanpa takut dinilai... (mis: secangkir teh hangat, sapaan tetangga, udara sejuk)"
           className="db-textarea"
+          aria-label="Tulisan refleksi"
         />
         <div className="db-textarea-footer">
           <span className="db-privacy-note">Hanya kamu yang dapat membaca ini</span>
-          <span className="db-word-counter">{wordCount} / {maxWords} kata</span>
+          <span className="db-word-counter" style={overLimit ? { color: '#dc2626' } : undefined}>
+            {wordCount} / {MAX_WORDS} kata
+          </span>
         </div>
       </div>
 
+      {error && (
+        <div className="auth-error-alert" style={{ marginBottom: 0 }}>
+          <AlertCircle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="db-reflection-actions">
-        <button type="button" className="db-btn-secondary" onClick={handleLater}>
-          Nanti Saja
+        <button
+          type="button"
+          className="db-btn-secondary"
+          onClick={() => setReflectionText('')}
+          disabled={!reflectionText || saving}
+        >
+          Kosongkan
         </button>
         <button
           type="button"
           className="db-btn-primary"
           onClick={handleSave}
-          disabled={!reflectionText.trim()}
+          disabled={!reflectionText.trim() || overLimit || saving}
         >
-          {isSaved ? 'Refleksi Tersimpan ✓' : 'Simpan Refleksi'}
+          {saving ? 'Menyimpan…' : justSaved ? 'Refleksi Tersimpan ✓' : 'Simpan Refleksi'}
         </button>
       </div>
     </div>

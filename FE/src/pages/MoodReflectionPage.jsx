@@ -1,35 +1,100 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   DashboardHeader,
   MoodReflectionHero,
   MoodCalendarGrid,
   MoodCheckInCard,
   EmotionTrendChart,
-  DailyQuoteCard
+  DailyQuoteCard,
+  MoodDetailModal,
 } from '../components/dashboard';
-import { saveTodayMoodLog, hasFilledToday } from '../service/dashboardService';
-import { X } from 'lucide-react';
+import { addDaysKey, getMoodLogs, getReflections, saveTodayMood, wibDateKey } from '../service/moodService';
+import { AlertCircle, X } from 'lucide-react';
+
+const pad = (n) => String(n).padStart(2, '0');
+const lastDayOfMonth = (year, month) => new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
 export default function MoodReflectionPage() {
-  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
-  const [key, setKey] = useState(0); // Trigger re-render of calendar
+  const [todayKey] = useState(() => wibDateKey());
+  const [view, setView] = useState(() => ({
+    year: Number(todayKey.slice(0, 4)),
+    month: Number(todayKey.slice(5, 7)) - 1,
+  }));
+  const [monthLogs, setMonthLogs] = useState({});
+  const [trendLogs, setTrendLogs] = useState({});
+  const [loadingMonth, setLoadingMonth] = useState(true);
+  const [loadingTrend, setLoadingTrend] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [detail, setDetail] = useState(null); // { log, reflections }
 
-  const handleOpenCheckIn = () => {
-    if (hasFilledToday()) {
-      alert('Anda sudah mengisi catatan mood untuk hari ini! Setiap hari hanya dapat diisi 1 kali.');
-      return;
-    }
-    setIsCheckInModalOpen(true);
+  // Log bulan yang sedang ditampilkan di kalender.
+  useEffect(() => {
+    let cancelled = false;
+    const monthKey = `${view.year}-${pad(view.month + 1)}`;
+    getMoodLogs(`${monthKey}-01`, `${monthKey}-${pad(lastDayOfMonth(view.year, view.month))}`)
+      .then((logs) => {
+        if (!cancelled) {
+          setMonthLogs(logs);
+          setError('');
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMonth(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [view, reloadKey]);
+
+  // Log 30 hari terakhir untuk grafik tren.
+  useEffect(() => {
+    let cancelled = false;
+    getMoodLogs(addDaysKey(todayKey, -29), todayKey)
+      .then((logs) => {
+        if (!cancelled) setTrendLogs(logs);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingTrend(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [todayKey, reloadKey]);
+
+  const changeMonth = (delta) => {
+    setLoadingMonth(true);
+    setView(({ year, month }) => {
+      const d = new Date(Date.UTC(year, month + delta, 1));
+      return { year: d.getUTCFullYear(), month: d.getUTCMonth() };
+    });
   };
 
-  const handleSaveMood = async (moodData) => {
-    try {
-      await saveTodayMoodLog(moodData);
-      setIsCheckInModalOpen(false);
-      setKey((prev) => prev + 1); // Refresh calendar
-    } catch (err) {
-      alert(err.message || 'Gagal menyimpan catatan mood.');
-    }
+  const handleOpenCheckIn = () => {
+    if (monthLogs[todayKey]) return;
+    setIsCheckInOpen(true);
+  };
+
+  const handleSaveMood = async (data) => {
+    await saveTodayMood(data);
+    setIsCheckInOpen(false);
+    setLoadingMonth(true);
+    setLoadingTrend(true);
+    setReloadKey((k) => k + 1);
+  };
+
+  const handleSelectDay = (dateKey) => {
+    const log = monthLogs[dateKey];
+    if (!log) return;
+    setDetail({ log, reflections: [] });
+    getReflections(dateKey, dateKey)
+      .then((reflections) => setDetail((d) => (d?.log.dateKey === dateKey ? { ...d, reflections } : d)))
+      .catch(() => {});
   };
 
   return (
@@ -37,33 +102,50 @@ export default function MoodReflectionPage() {
       <DashboardHeader />
 
       <div className="db-scrollable-body">
-        {/* Hero Banner */}
         <MoodReflectionHero />
 
-        {/* Real-time Monthly Calendar Grid */}
-        <MoodCalendarGrid key={key} onOpenCheckIn={handleOpenCheckIn} />
+        {error && (
+          <div className="auth-error-alert">
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
-        {/* 30-Day Emotion Trend Chart */}
-        <EmotionTrendChart />
+        <MoodCalendarGrid
+          year={view.year}
+          month={view.month}
+          logs={monthLogs}
+          loading={loadingMonth}
+          todayKey={todayKey}
+          onPrevMonth={() => changeMonth(-1)}
+          onNextMonth={() => changeMonth(1)}
+          onOpenCheckIn={handleOpenCheckIn}
+          onSelectDay={handleSelectDay}
+        />
 
-        {/* Daily Wisdom Quote Card */}
+        <EmotionTrendChart logs={trendLogs} todayKey={todayKey} loading={loadingTrend} />
+
         <DailyQuoteCard />
       </div>
 
-      {/* Mood Check-In Modal Overlay */}
-      {isCheckInModalOpen && (
-        <div className="mc-modal-overlay" onClick={() => setIsCheckInModalOpen(false)}>
+      {isCheckInOpen && (
+        <div className="mc-modal-overlay" onClick={() => setIsCheckInOpen(false)}>
           <div className="mc-modal-card" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="mc-modal-close-btn"
-              onClick={() => setIsCheckInModalOpen(false)}
+              onClick={() => setIsCheckInOpen(false)}
+              aria-label="Tutup"
             >
               <X size={20} />
             </button>
             <MoodCheckInCard onSave={handleSaveMood} />
           </div>
         </div>
+      )}
+
+      {detail && (
+        <MoodDetailModal log={detail.log} reflections={detail.reflections} onClose={() => setDetail(null)} />
       )}
     </div>
   );

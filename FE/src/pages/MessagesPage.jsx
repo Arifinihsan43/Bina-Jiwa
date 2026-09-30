@@ -1,539 +1,509 @@
-import React, { useState } from 'react';
-import AudioPlayerCard from '../components/chat/AudioPlayerCard';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles/chat.css';
 import {
   ShieldCheck,
-  Bell,
   RotateCw,
-  Plus,
-  MoreVertical,
   Search,
-  SlidersHorizontal,
   Check,
   CheckCheck,
-  Pin,
-  Phone,
-  Video,
   Lock,
-  Smile,
-  Paperclip,
-  Mic,
   Send,
-  Users,
   AlertCircle,
-  User
+  CalendarCheck,
+  MessageSquare,
+  Link2,
 } from 'lucide-react';
+import {
+  counterpartOf,
+  dayKey,
+  formatDayLabel,
+  formatListTime,
+  formatTime,
+  listConversations,
+  listMessages,
+  markConversationRead,
+  sendMessage,
+  splitLinks,
+} from '../service/chatService';
+import { formatAppointmentRange, listMyAppointments } from '../service/appointmentService';
 
-export default function MessagesPage() {
-  const [activeFilter, setActiveFilter] = useState('Semua');
-  const [selectedChatId, setSelectedChatId] = useState('nadia');
-  const [inputMessage, setInputMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+const LIST_POLL_MS = 15000;
+const MESSAGE_POLL_MS = 5000;
 
-  // Pre-populated conversations data matching the user's exact specification image
-  const [chatsData, setChatsData] = useState({
-    nadia: {
-      id: 'nadia',
-      name: 'Nadia Pratiwi, M.Psi.',
-      fullName: 'Nadia Pratiwi, M.Psi., Psikolog',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-      verified: true,
-      online: true,
-      statusText: 'Online • Sesi Aktif Berakhir dlm 35 Menit',
-      category: 'Psikolog Klinis',
-      tags: [
-        { label: 'Psikolog Klinis', type: 'blue' },
-        { label: 'Sesi Aktif', type: 'green' }
-      ],
-      messages: [
-        {
-          id: 1,
-          sender: 'them',
-          type: 'text',
-          text: 'Selamat pagi Rani. Bagaimana perasaan dan kualitas tidurmu semalam? Apakah kamu sempat mencoba audio grounding 5-4-3-2-1 yang kita bahas kemarin?',
-          time: '09:14'
-        },
-        {
-          id: 2,
-          sender: 'me',
-          type: 'text',
-          text: 'Selamat pagi Bu Nadia. Semalam sudah lebih tenang setelah mencoba jeda napas 5 menit, tapi saat bangun rasa cemas di dada masih agak terasa.',
-          time: '09:18',
-          status: 'read'
-        },
-        {
-          id: 3,
-          sender: 'them',
-          type: 'audio',
-          audioTitle: 'Audio Relaksasi Grounding 5 Menit',
-          audioSubtitle: 'Panduan Klinis Pengendalian Kecemasan',
-          time: '09:20'
-        },
-        {
-          id: 4,
-          sender: 'me',
-          type: 'text',
-          text: 'Baik Bu, saya putar audio ini sekarang sambil bersiap.',
-          time: '09:22',
-          status: 'read'
-        }
-      ]
-    },
+// Template cepat untuk psikolog (mis. mengirim tautan sesi online).
+const PSYCHOLOGIST_TEMPLATES = [
+  { label: 'Tautan sesi', icon: Link2, text: 'Berikut tautan sesi online kita: ' },
+  { label: 'Pengingat', icon: CalendarCheck, text: 'Mohon bergabung 5–10 menit sebelum sesi dimulai, di tempat yang tenang dan nyaman ya.' },
+];
 
-    dimas: {
-      id: 'dimas',
-      name: 'dr. Dimas Wicaksono, Sp.KJ',
-      fullName: 'dr. Dimas Wicaksono, Sp.KJ',
-      avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
-      verified: true,
-      online: true,
-      statusText: 'Online • Praktek Klinis',
-      category: 'Psikolog Klinis',
-      unreadCount: 1,
-      tags: [
-        { label: 'Psikiater • Konsultasi Medis', type: 'purple' }
-      ],
-      messages: [
-        {
-          id: 1,
-          sender: 'them',
-          type: 'text',
-          text: 'Halo Rani, Jadwal evaluasi resep minggu depan sudah saya jadwalkan untuk hari Selasa pukul 10:00 WIB.',
-          time: '08:15'
-        }
-      ]
-    },
+const initialsOf = (name = '') =>
+  name
+    .split(',')[0]
+    .split(/\s+/)
+    .filter((w) => w && !w.endsWith('.'))
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('') || '?';
 
-    ruang_teduh: {
-      id: 'ruang_teduh',
-      name: 'Ruang Teduh: Saling Dukung',
-      fullName: 'Ruang Teduh: Saling Dukung (Grup Anonim)',
-      isGroup: true,
-      avatar: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&auto=format&fit=crop&q=80',
-      online: true,
-      statusText: '24 Anggota Aktif • Pendukung Anonim',
-      category: 'Favorit',
-      tags: [
-        { label: 'Grup Pendukung Anonim', type: 'lavender' }
-      ],
-      messages: [
-        {
-          id: 1,
-          sender: 'them',
-          type: 'text',
-          senderName: 'Bintang Malam',
-          text: 'Terima kasih sarannya teman-teman, sangat membantu menenangkan pikiran malam ini.',
-          time: 'Kemarin'
-        }
-      ]
-    },
+function MessageText({ text }) {
+  return splitLinks(text).map((part, i) =>
+    part.isLink ? (
+      <a key={i} href={part.text} target="_blank" rel="noopener noreferrer" className="message-link">
+        {part.text}
+      </a>
+    ) : (
+      <React.Fragment key={i}>{part.text}</React.Fragment>
+    )
+  );
+}
 
-    hotline: {
-      id: 'hotline',
-      name: 'Konselor Siaga 24/7 (Bina Jiwa)',
-      fullName: 'Konselor Siaga 24/7 (Tim Tanggap Bina Jiwa)',
-      isHotline: true,
-      avatar: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=150&auto=format&fit=crop&q=80',
-      online: true,
-      statusText: 'Siaga 24 Jam • Bebas Pulsa',
-      category: 'Belum dibaca',
-      tags: [
-        { label: 'Siaga Darurat & Krisis', type: 'red' }
-      ],
-      messages: [
-        {
-          id: 1,
-          sender: 'them',
-          type: 'text',
-          text: 'Panggilan darurat & panduan grounding siap diakses kapan saja jika Anda membutuhkan bantuan cepat.',
-          time: 'Selasa'
-        }
-      ]
-    },
+/** Jendela satu percakapan. Di-mount ulang (key) setiap kali percakapan berganti. */
+function ChatWindow({ conversation, userId, nextSession, onSeen, onSent }) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  const bodyRef = useRef(null);
+  const inputRef = useRef(null);
 
-    pakoy: {
-      id: 'pakoy',
-      name: 'Pakoy ID / Teman Sebaya',
-      fullName: 'Pakoy ID / Teman Sebaya (Peer Companion)',
-      isPinned: true,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      online: false,
-      statusText: 'Terakhir dilihat tadi malam',
-      category: 'Favorit',
-      tags: [
-        { label: 'Teman Sebaya • Peer', type: 'gray' }
-      ],
-      messages: [
-        {
-          id: 1,
-          sender: 'them',
-          type: 'text',
-          text: 'Semoga istirahatmu cukup malam ini ya, jangan dipikirkan terus.',
-          time: '00:11'
-        }
-      ]
-    },
+  const conversationId = conversation.id_conversation;
+  const active = counterpartOf(conversation, userId);
 
-    bambang: {
-      id: 'bambang',
-      name: 'Bambang W., M.Psi.',
-      fullName: 'Bambang W., M.Psi.',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      online: false,
-      statusText: 'Sesi Selesai',
-      category: 'Semua',
-      tags: [
-        { label: 'Selesai • Arsip Sesi', type: 'gray' }
-      ],
-      messages: [
-        {
-          id: 1,
-          sender: 'them',
-          type: 'text',
-          text: 'Catatan ringkasan evaluasi sesi regulasi stres siap diunduh di portal dokumen.',
-          time: '21 Okt'
-        }
-      ]
-    }
-  });
+  const scrollToBottom = () =>
+    requestAnimationFrame(() => {
+      if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+    });
 
-  const activeChat = chatsData[selectedChatId] || chatsData.nadia;
+  useEffect(() => {
+    let cancelled = false;
+    let lastCount = -1;
 
-  // Handle send message
-  const handleSendMessage = (e) => {
-    e?.preventDefault();
-    if (!inputMessage.trim()) return;
+    const load = (initial) =>
+      listMessages(conversationId)
+        .then((rows) => {
+          if (cancelled) return;
+          setMessages(rows);
+          if (initial || rows.some((m) => !m.is_read && m.id_sender !== userId)) {
+            markConversationRead(conversationId).catch(() => {});
+            onSeen(conversationId);
+          }
+          if (rows.length !== lastCount) {
+            lastCount = rows.length;
+            scrollToBottom();
+          }
+        })
+        .catch((err) => {
+          if (!cancelled && initial) setError(err.message);
+        })
+        .finally(() => {
+          if (!cancelled && initial) setLoading(false);
+        });
 
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const timeStr = `${hours}:${minutes}`;
-
-    const newMsg = {
-      id: Date.now(),
-      sender: 'me',
-      type: 'text',
-      text: inputMessage.trim(),
-      time: timeStr,
-      status: 'read'
+    load(true);
+    const timer = setInterval(() => load(false), MESSAGE_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
     };
+  }, [conversationId, userId, onSeen]);
 
-    setChatsData((prev) => ({
-      ...prev,
-      [selectedChatId]: {
-        ...prev[selectedChatId],
-        messages: [...prev[selectedChatId].messages, newMsg]
-      }
-    }));
-
-    setInputMessage('');
+  const handleSend = async (e) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || sending) return;
+    setSending(true);
+    setError('');
+    try {
+      const sent = await sendMessage(conversationId, text);
+      setMessages((prev) => [...prev, sent]);
+      onSent(conversationId, sent);
+      setInput('');
+      scrollToBottom();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
-  // Contacts list rendering filter
-  const conversationList = Object.values(chatsData).filter((chat) => {
-    // Filter query search
-    if (searchQuery && !chat.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    // Filter category tabs
-    if (activeFilter === 'Belum dibaca') return chat.unreadCount > 0 || chat.category === 'Belum dibaca';
-    if (activeFilter === 'Psikolog Klinis') return chat.tags.some(t => t.label.includes('Psikolog'));
-    if (activeFilter === 'Favorit') return chat.category === 'Favorit' || chat.isPinned;
+  const applyTemplate = (text) => {
+    setInput((prev) => (prev ? `${prev} ${text}` : text));
+    inputRef.current?.focus();
+  };
+
+  return (
+    <>
+      <div className="chat-window-header">
+        <div className="chat-header-user-info">
+          <div className="header-avatar-box">
+            <div className="header-avatar-img initial-avatar">{initialsOf(active.name)}</div>
+          </div>
+          <div className="header-user-details">
+            <div className="header-user-name-row">
+              <h3 className="header-user-name">{active.name}</h3>
+              {active.role === 'Psikolog' && <Check size={15} className="verified-icon" />}
+            </div>
+            <div className="header-user-status">
+              <CalendarCheck size={13} />
+              <span>
+                {nextSession
+                  ? `Sesi berikutnya: ${formatAppointmentRange(nextSession.tanggal_mulai, nextSession.tanggal_selesai)} • ${nextSession.type === 'ONLINE' ? 'Online' : 'Tatap muka'}`
+                  : active.role}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="chat-messages-body" ref={bodyRef}>
+        <div className="encrypted-banner">
+          <Lock size={14} />
+          <span>
+            Percakapan ini hanya dapat dibaca oleh Anda dan {active.role.toLowerCase()} Anda.
+            Jangan bagikan kata sandi atau data sensitif di luar kebutuhan konsultasi.
+          </span>
+        </div>
+
+        {loading && <div className="date-divider">Memuat pesan…</div>}
+
+        {!loading && messages.length === 0 && (
+          <div className="date-divider">
+            {active.iAmPsychologist
+              ? 'Belum ada pesan. Kirim tautan sesi atau informasi persiapan untuk klien Anda.'
+              : 'Belum ada pesan. Psikolog Anda akan mengirim informasi sesi di sini.'}
+          </div>
+        )}
+
+        {messages.map((m, i) => {
+          const isMe = m.id_sender === userId;
+          const showDay = i === 0 || dayKey(messages[i - 1].created_at) !== dayKey(m.created_at);
+          return (
+            <React.Fragment key={m.id_message}>
+              {showDay && <div className="date-divider">{formatDayLabel(m.created_at)}</div>}
+              <div className={`message-row ${isMe ? 'outgoing' : 'incoming'}`}>
+                <div className="message-bubble">
+                  <span className="message-text">
+                    {m.isi && <MessageText text={m.isi} />}
+                    {m.attachment_url && /^https?:\/\//i.test(m.attachment_url) && (
+                      <a href={m.attachment_url} target="_blank" rel="noopener noreferrer" className="message-link">
+                        {m.attachment_url}
+                      </a>
+                    )}
+                  </span>
+                  <div className="message-meta">
+                    <span className="message-time">{formatTime(m.created_at)}</span>
+                    {isMe && (m.is_read
+                      ? <CheckCheck size={14} className="read-status-icon" />
+                      : <Check size={14} className="read-status-icon unread" />)}
+                  </div>
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {conversation.status === 'ACTIVE' ? (
+        <>
+          {active.iAmPsychologist && (
+            <div className="chat-template-row">
+              {PSYCHOLOGIST_TEMPLATES.map(({ label, icon: Icon, text }) => (
+                <button key={label} type="button" className="chat-template-chip" onClick={() => applyTemplate(text)}>
+                  <Icon size={13} /> {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && (
+            <div className="chat-send-error">
+              <AlertCircle size={14} /> {error}
+            </div>
+          )}
+          <form className="chat-input-bar" onSubmit={handleSend}>
+            <input
+              ref={inputRef}
+              type="text"
+              className="chat-text-input-field"
+              placeholder={`Ketik pesan untuk ${active.name.split(/[\s,]/)[0]}...`}
+              value={input}
+              maxLength={4000}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <button type="submit" className="chat-send-btn" title="Kirim Pesan" disabled={!input.trim() || sending}>
+              <Send size={18} />
+            </button>
+          </form>
+        </>
+      ) : (
+        <div className="chat-closed-note">Percakapan ini sudah ditutup.</div>
+      )}
+    </>
+  );
+}
+
+export default function MessagesPage({ user }) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [conversations, setConversations] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [listError, setListError] = useState('');
+  const [appointments, setAppointments] = useState([]);
+  const [search, setSearch] = useState('');
+  const [onlyUnread, setOnlyUnread] = useState(false);
+  const [listReload, setListReload] = useState(0);
+  const [nowTs, setNowTs] = useState(() => Date.now());
+
+  const selectedId = searchParams.get('c');
+  const userId = user?.id;
+  const isDoctor = user?.role === 'doctor';
+
+  // --- Daftar percakapan (polling) ---
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      listConversations()
+        .then((rows) => {
+          if (cancelled) return;
+          setConversations(rows);
+          setListError('');
+          setNowTs(Date.now());
+        })
+        .catch((err) => {
+          if (!cancelled) setListError(err.message);
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingList(false);
+        });
+    load();
+    const timer = setInterval(load, LIST_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [listReload]);
+
+  // Janji temu, untuk menampilkan sesi berikutnya di header percakapan.
+  useEffect(() => {
+    let cancelled = false;
+    listMyAppointments()
+      .then((rows) => {
+        if (!cancelled) setAppointments(rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Pilih percakapan dari ?psikolog=&klien= (tombol "Kirim Pesan" di Janji Temu),
+  // atau percakapan teratas di layar lebar.
+  useEffect(() => {
+    if (selectedId || conversations.length === 0) return;
+    const psikolog = searchParams.get('psikolog');
+    const klien = searchParams.get('klien');
+    const match = psikolog && klien
+      ? conversations.find((c) => c.id_psychologist === psikolog && c.id_user === klien)
+      : null;
+    const target = match || (window.innerWidth > 768 ? conversations[0] : null);
+    if (target) setSearchParams({ c: target.id_conversation }, { replace: true });
+  }, [conversations, selectedId, searchParams, setSearchParams]);
+
+  const handleSeen = useMemo(
+    () => (conversationId) =>
+      setConversations((prev) =>
+        prev.map((c) => (c.id_conversation === conversationId ? { ...c, jumlah_belum_dibaca: 0 } : c))
+      ),
+    []
+  );
+
+  const handleSent = (conversationId, message) =>
+    setConversations((prev) =>
+      prev.map((c) => (c.id_conversation === conversationId ? { ...c, pesan_terakhir: message } : c))
+    );
+
+  const activeConversation = conversations.find((c) => c.id_conversation === selectedId) || null;
+
+  const nextSession = activeConversation
+    ? appointments
+        .filter(
+          (a) =>
+            a.id_user === activeConversation.id_user &&
+            a.id_psychologist === activeConversation.id_psychologist &&
+            a.status === 'CONFIRMED' &&
+            new Date(a.tanggal_selesai).getTime() > nowTs
+        )
+        .sort((a, b) => new Date(a.tanggal_mulai) - new Date(b.tanggal_mulai))[0] || null
+    : null;
+
+  const q = search.trim().toLowerCase();
+  const visibleConversations = conversations.filter((c) => {
+    if (onlyUnread && !c.jumlah_belum_dibaca) return false;
+    if (q && !counterpartOf(c, userId).name.toLowerCase().includes(q)) return false;
     return true;
   });
+
+  const totalUnread = conversations.reduce((sum, c) => sum + (c.jumlah_belum_dibaca || 0), 0);
+  const todayKey = dayKey(new Date(nowTs).toISOString());
 
   return (
     <div className="db-main-content p-0 overflow-hidden">
       <div className="chat-portal-wrapper">
-          {/* Top Portal Banner / Header Bar */}
-          <header className="portal-top-bar">
-            <div className="portal-title-area">
-              <div className="portal-brand-icon">
-                <ShieldCheck size={18} />
-              </div>
-              <h1 className="portal-heading">Portal Konsultasi Klinis &amp; Pesan Pulih</h1>
-              <div className="portal-security-badge">
-                <ShieldCheck size={14} />
-                <span>HIMPSI Terenkripsi</span>
-              </div>
+        <header className="portal-top-bar">
+          <div className="portal-title-area">
+            <div className="portal-brand-icon">
+              <ShieldCheck size={18} />
             </div>
-
-            <div className="portal-actions-area">
-              <button type="button" className="portal-icon-btn" title="Notifikasi">
-                <Bell size={18} />
-                <span className="notification-dot" />
-              </button>
+            <h1 className="portal-heading">Pesan Konsultasi</h1>
+            <div className="portal-security-badge">
+              <Lock size={14} />
+              <span>Hanya Anda &amp; {isDoctor ? 'klien' : 'psikolog'} Anda</span>
             </div>
-          </header>
+          </div>
+        </header>
 
-          {/* 2-Column Split Workspace */}
-          <div className="chat-main-container">
-            {/* LEFT COLUMN: Chats Sidebar List */}
-            <aside className="chat-sidebar-panel">
-              <div className="chat-sidebar-header">
-                <div className="chat-sidebar-title-row">
-                  <h2 className="chat-sidebar-title">Chats</h2>
-                  <div className="chat-sidebar-tools">
-                    <button type="button" className="tool-icon-btn" title="Muat Ulang">
-                      <RotateCw size={17} />
-                    </button>
-                    <button type="button" className="tool-icon-btn" title="Chat Baru">
-                      <Plus size={18} />
-                    </button>
-                    <button type="button" className="tool-icon-btn" title="Menu Opsi">
-                      <MoreVertical size={18} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Search Box */}
-                <div className="chat-search-box">
-                  <Search size={16} className="search-input-icon" />
-                  <input
-                    type="text"
-                    className="chat-search-input"
-                    placeholder="Cari atau mulai chat baru"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <SlidersHorizontal size={15} className="search-filter-icon" title="Filter Chat" />
-                </div>
-
-                {/* Filter Chips / Tabs */}
-                <div className="chat-filter-chips">
+        <div className="chat-main-container">
+          {/* Daftar percakapan */}
+          <aside className="chat-sidebar-panel">
+            <div className="chat-sidebar-header">
+              <div className="chat-sidebar-title-row">
+                <h2 className="chat-sidebar-title">Chats</h2>
+                <div className="chat-sidebar-tools">
                   <button
                     type="button"
-                    className={`filter-chip ${activeFilter === 'Semua' ? 'active' : ''}`}
-                    onClick={() => setActiveFilter('Semua')}
+                    className="tool-icon-btn"
+                    title="Muat Ulang"
+                    onClick={() => setListReload((n) => n + 1)}
                   >
-                    Semua
-                  </button>
-                  <button
-                    type="button"
-                    className={`filter-chip ${activeFilter === 'Belum dibaca' ? 'active' : ''}`}
-                    onClick={() => setActiveFilter('Belum dibaca')}
-                  >
-                    Belum dibaca
-                    <span className="chip-badge">3</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`filter-chip ${activeFilter === 'Psikolog Klinis' ? 'active' : ''}`}
-                    onClick={() => setActiveFilter('Psikolog Klinis')}
-                  >
-                    Psikolog Klinis
-                  </button>
-                  <button
-                    type="button"
-                    className={`filter-chip ${activeFilter === 'Favorit' ? 'active' : ''}`}
-                    onClick={() => setActiveFilter('Favorit')}
-                  >
-                    Favorit
+                    <RotateCw size={17} />
                   </button>
                 </div>
               </div>
 
-              {/* Chat Item List */}
-              <div className="chat-list-scroll">
-                {conversationList.map((chat) => {
-                  const isSelected = selectedChatId === chat.id;
-                  const lastMsg = chat.messages[chat.messages.length - 1];
-
-                  return (
-                    <div
-                      key={chat.id}
-                      className={`chat-item-card ${isSelected ? 'active' : ''}`}
-                      onClick={() => setSelectedChatId(chat.id)}
-                    >
-                      {/* Avatar */}
-                      <div className="chat-avatar-wrapper">
-                        {chat.isGroup ? (
-                          <div className="chat-avatar-img group-avatar">
-                            <Users size={22} />
-                          </div>
-                        ) : chat.isHotline ? (
-                          <div className="chat-avatar-img hotline-avatar">
-                            <AlertCircle size={22} />
-                          </div>
-                        ) : (
-                          <img
-                            src={chat.avatar}
-                            alt={chat.name}
-                            className="chat-avatar-img"
-                          />
-                        )}
-                        {chat.online && <span className="status-dot-online" />}
-                      </div>
-
-                      {/* Content */}
-                      <div className="chat-item-info">
-                        <div className="chat-item-top">
-                          <div className="chat-item-name-row">
-                            <span className="chat-item-name">{chat.name}</span>
-                            {chat.verified && <Check size={14} className="verified-icon" />}
-                            {chat.isPinned && <Pin size={12} className="pin-icon" />}
-                          </div>
-                          <span className={`chat-item-time ${isSelected ? 'highlight' : ''}`}>
-                            {lastMsg?.time || '09:22'}
-                          </span>
-                        </div>
-
-                        <div className="chat-item-preview-row">
-                          <p className="chat-item-preview">
-                            {isSelected && <Check size={13} className="inline mr-1 text-sky-500" />}
-                            {lastMsg?.text || 'Audio Relaksasi Grounding...'}
-                          </p>
-                          {chat.unreadCount > 0 && (
-                            <span className="unread-badge">{chat.unreadCount}</span>
-                          )}
-                        </div>
-
-                        {/* Tags */}
-                        <div className="chat-item-tags">
-                          {chat.tags.map((tag, idx) => (
-                            <span key={idx} className={`tag-pill tag-${tag.type}`}>
-                              {tag.label}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </aside>
-
-            {/* RIGHT COLUMN: Active Chat Window */}
-            <main className="chat-window-panel">
-              {/* Header Bar */}
-              <div className="chat-window-header">
-                <div className="chat-header-user-info">
-                  <div className="header-avatar-box">
-                    {activeChat.isGroup ? (
-                      <div className="header-avatar-img group-avatar">
-                        <Users size={20} />
-                      </div>
-                    ) : (
-                      <img
-                        src={activeChat.avatar}
-                        alt={activeChat.name}
-                        className="header-avatar-img"
-                      />
-                    )}
-                    {activeChat.online && <span className="status-dot-online" />}
-                  </div>
-
-                  <div className="header-user-details">
-                    <div className="header-user-name-row">
-                      <h3 className="header-user-name">{activeChat.fullName || activeChat.name}</h3>
-                      {activeChat.verified && <Check size={15} className="verified-icon" />}
-                    </div>
-                    <div className="header-user-status">
-                      <span className="status-green-dot" />
-                      <span>{activeChat.statusText}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="chat-header-actions">
-                  <button type="button" className="header-action-btn" title="Panggilan Suara">
-                    <Phone size={18} />
-                  </button>
-                  <button type="button" className="header-action-btn" title="Panggilan Video">
-                    <Video size={18} />
-                  </button>
-                  <button type="button" className="header-action-btn" title="Cari di Pesan">
-                    <Search size={18} />
-                  </button>
-                  <button type="button" className="header-action-btn" title="Opsi">
-                    <MoreVertical size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat Messages Body */}
-              <div className="chat-messages-body">
-                {/* Encrypted Notice Banner */}
-                <div className="encrypted-banner">
-                  <Lock size={14} />
-                  <span>
-                    Pesan dan panggilan terenkripsi secara end-to-end. Hanya Anda dan konselor yang
-                    dapat membaca atau mendengarkannya.
-                  </span>
-                </div>
-
-                {/* Date Divider */}
-                <div className="date-divider">HARI INI</div>
-
-                {/* Messages Stream */}
-                {activeChat.messages.map((msg) => {
-                  const isMe = msg.sender === 'me';
-
-                  if (msg.type === 'audio') {
-                    return (
-                      <div key={msg.id} className="message-row incoming">
-                        <div className="audio-message-wrapper">
-                          <AudioPlayerCard
-                            title={msg.audioTitle}
-                            subtitle={msg.audioSubtitle}
-                            initialTime={45}
-                            duration={300}
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`message-row ${isMe ? 'outgoing' : 'incoming'}`}
-                    >
-                      <div className="message-bubble">
-                        {msg.senderName && (
-                          <div className="text-xs font-bold text-indigo-600 mb-1">
-                            {msg.senderName}
-                          </div>
-                        )}
-                        <span>{msg.text}</span>
-                        <div className="message-meta">
-                          <span className="message-time">{msg.time}</span>
-                          {isMe && <CheckCheck size={14} className="read-status-icon" />}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Chat Input Bar */}
-              <form className="chat-input-bar" onSubmit={handleSendMessage}>
-                <button type="button" className="chat-input-action-btn" title="Emoji">
-                  <Smile size={20} />
-                </button>
-                <button type="button" className="chat-input-action-btn" title="Lampiran">
-                  <Paperclip size={20} />
-                </button>
-
+              <div className="chat-search-box">
+                <Search size={16} className="search-input-icon" />
                 <input
                   type="text"
-                  className="chat-text-input-field"
-                  placeholder={`Ketik pesan untuk ${activeChat.name.split(' ')[0]}...`}
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
+                  className="chat-search-input"
+                  placeholder={isDoctor ? 'Cari nama klien' : 'Cari nama psikolog'}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
+              </div>
 
-                <button type="button" className="chat-input-action-btn" title="Pesan Suara">
-                  <Mic size={20} />
+              <div className="chat-filter-chips">
+                <button
+                  type="button"
+                  className={`filter-chip ${!onlyUnread ? 'active' : ''}`}
+                  onClick={() => setOnlyUnread(false)}
+                >
+                  Semua
                 </button>
+                <button
+                  type="button"
+                  className={`filter-chip ${onlyUnread ? 'active' : ''}`}
+                  onClick={() => setOnlyUnread(true)}
+                >
+                  Belum dibaca
+                  {totalUnread > 0 && <span className="chip-badge">{totalUnread}</span>}
+                </button>
+              </div>
+            </div>
 
-                <button type="submit" className="chat-send-btn" title="Kirim Pesan">
-                  <Send size={18} />
-                </button>
-              </form>
-            </main>
-          </div>
+            <div className="chat-list-scroll">
+              {loadingList && <p className="chat-list-note">Memuat percakapan…</p>}
+              {!loadingList && listError && (
+                <p className="chat-list-note error">
+                  <AlertCircle size={14} /> {listError}
+                </p>
+              )}
+              {!loadingList && !listError && conversations.length === 0 && (
+                <div className="chat-list-empty">
+                  <MessageSquare size={28} />
+                  <strong>Belum ada percakapan</strong>
+                  <span>
+                    {isDoctor
+                      ? 'Percakapan dengan klien terbuka otomatis setelah Anda mengonfirmasi janji temu.'
+                      : 'Percakapan dengan psikolog terbuka otomatis setelah janji temu Anda dikonfirmasi.'}
+                  </span>
+                  <button
+                    type="button"
+                    className="chat-empty-btn"
+                    onClick={() => navigate(isDoctor ? '/janji-temu' : '/psikolog')}
+                  >
+                    {isDoctor ? 'Lihat Janji Temu' : 'Cari Psikolog'}
+                  </button>
+                </div>
+              )}
+
+              {visibleConversations.map((c) => {
+                const other = counterpartOf(c, userId);
+                const last = c.pesan_terakhir;
+                const isSelected = c.id_conversation === selectedId;
+                return (
+                  <div
+                    key={c.id_conversation}
+                    className={`chat-item-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => setSearchParams({ c: c.id_conversation })}
+                  >
+                    <div className="chat-avatar-wrapper">
+                      <div className="chat-avatar-img initial-avatar">{initialsOf(other.name)}</div>
+                    </div>
+                    <div className="chat-item-info">
+                      <div className="chat-item-top">
+                        <div className="chat-item-name-row">
+                          <span className="chat-item-name">{other.name}</span>
+                          {other.role === 'Psikolog' && <Check size={14} className="verified-icon" />}
+                        </div>
+                        <span className={`chat-item-time ${isSelected ? 'highlight' : ''}`}>
+                          {last ? formatListTime(last.created_at, todayKey) : ''}
+                        </span>
+                      </div>
+                      <div className="chat-item-preview-row">
+                        <p className="chat-item-preview">
+                          {last
+                            ? `${last.id_sender === userId ? 'Anda: ' : ''}${last.isi || 'Lampiran'}`
+                            : 'Belum ada pesan — mulai percakapan'}
+                        </p>
+                        {c.jumlah_belum_dibaca > 0 && !isSelected && (
+                          <span className="unread-badge">{c.jumlah_belum_dibaca}</span>
+                        )}
+                      </div>
+                      <div className="chat-item-tags">
+                        <span className={`tag-pill ${other.role === 'Psikolog' ? 'tag-blue' : 'tag-green'}`}>
+                          {other.role}
+                        </span>
+                        {c.status !== 'ACTIVE' && <span className="tag-pill tag-gray">Ditutup</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* Jendela percakapan */}
+          <main className="chat-window-panel">
+            {activeConversation ? (
+              <ChatWindow
+                key={activeConversation.id_conversation}
+                conversation={activeConversation}
+                userId={userId}
+                nextSession={nextSession}
+                onSeen={handleSeen}
+                onSent={handleSent}
+              />
+            ) : (
+              <div className="chat-window-empty">
+                <MessageSquare size={36} />
+                <strong>Pilih percakapan</strong>
+                <span>Pesan hanya tersedia antara pengguna dan psikolog setelah janji temu dikonfirmasi.</span>
+              </div>
+            )}
+          </main>
         </div>
       </div>
+    </div>
   );
 }
