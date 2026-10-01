@@ -1077,3 +1077,396 @@
     padding: 18px;
   }
 }
+
+/* ==========================================================================
+   Komunitas — data asli (persona, balasan, tanggapan, laporan)
+   ========================================================================== */
+
+.persona-setup-card {
+  gap: 14px;
+}
+
+.persona-setup-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.persona-setup-title {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.persona-setup-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.persona-setup-row .add-comment-input {
+  min-width: 200px;
+}
+
+.create-post-title {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.create-post-title:focus {
+  outline: none;
+  border-color: #38bdf8;
+  background: #ffffff;
+}
+
+.submit-post-btn:disabled,
+.submit-comment-btn:disabled,
+.load-more-btn:disabled,
+.randomize-persona-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: komunitas-spin 0.8s linear infinite;
+}
+
+@keyframes komunitas-spin {
+  to { transform: rotate(360deg); }
+}
+
+.feed-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #0284c7;
+  cursor: pointer;
+}
+
+.feed-refresh-btn:hover {
+  background: #f0f9ff;
+}
+
+.feed-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.feed-empty-state strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.komunitas-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  color: #dc2626;
+}
+
+.mine-mini-tag,
+.psikolog-mini-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.mine-mini-tag {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.psikolog-mini-tag {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.comment-item.by-psychologist {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+
+.comment-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-item-header .content-menu {
+  margin-left: auto;
+}
+
+.answer-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.answer-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.answer-action-btn:hover,
+.answer-action-btn.hugged {
+  color: #ea580c;
+}
+
+.answer-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding-left: 4px;
+}
+
+.answer-comment-item {
+  display: flex;
+  gap: 8px;
+}
+
+.answer-comment-arrow {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #94a3b8;
+}
+
+.add-comment-bar.compact .add-comment-input {
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+.add-comment-bar.compact .submit-comment-btn {
+  padding: 6px 10px;
+}
+
+/* Menu "…" */
+.content-menu {
+  position: relative;
+}
+
+.content-menu-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  min-width: 180px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.content-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+}
+
+.content-menu-item:hover {
+  background: #f1f5f9;
+}
+
+.content-menu-item.danger {
+  color: #dc2626;
+}
+
+.content-menu-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.content-menu-confirm div {
+  display: flex;
+  gap: 6px;
+}
+
+.content-menu-confirm button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.content-menu-confirm .content-menu-danger {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* Modal laporan */
+.komunitas-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.komunitas-modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.komunitas-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+}
+
+.komunitas-modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.komunitas-modal-close {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.komunitas-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.komunitas-modal-sub {
+  margin: 0;
+  font-size: 13.5px;
+  color: #475569;
+}
+
+.report-reason-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-reason {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.report-reason.active {
+  border-color: #38bdf8;
+  background: #f0f9ff;
+}
+
+.report-description {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 12px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.report-crisis-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff7ed;
+  font-size: 12.5px;
+  color: #9a3412;
+}
+
+.komunitas-modal-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 13.5px;
+  color: #475569;
+}
+
+.komunitas-modal-done strong {
+  color: #0f172a;
+}

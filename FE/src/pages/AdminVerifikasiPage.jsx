@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BinaJiwaLogo from '../components/common/BinaJiwaLogo';
+import CategoryAdmin from '../components/admin/CategoryAdmin';
+import ReportAdmin from '../components/admin/ReportAdmin';
 import '../styles/psikolog.css';
 import '../styles/profil-psikolog.css';
 import '../styles/admin-verifikasi.css';
@@ -19,6 +21,9 @@ import {
   ArrowLeft,
   KeyRound,
   LogOut,
+  Stethoscope,
+  Tags,
+  Flag,
 } from 'lucide-react';
 import { splitSpecializations, safeExternalUrl } from '../service/psychologistService';
 import {
@@ -28,6 +33,31 @@ import {
   verifyPsychologist,
 } from '../service/adminService';
 import { ApiError } from '../service/apiClient';
+
+const SECTIONS = [
+  {
+    id: 'psikolog',
+    label: 'Verifikasi Psikolog',
+    icon: Stethoscope,
+    title: 'Verifikasi Psikolog',
+    description:
+      'Periksa nomor HIMPSI, SIPP, dan dokumen sebelum menyetujui. Hanya psikolog yang disetujui yang tampil di halaman Cari Psikolog.',
+  },
+  {
+    id: 'kategori',
+    label: 'Topik Komunitas',
+    icon: Tags,
+    title: 'Topik Komunitas',
+    description: 'Atur topik yang bisa dipilih pengguna saat berbagi cerita di Komunitas.',
+  },
+  {
+    id: 'laporan',
+    label: 'Laporan Komunitas',
+    icon: Flag,
+    title: 'Laporan Komunitas',
+    description: 'Tinjau konten yang dilaporkan pengguna. Sembunyikan yang melanggar agar Komunitas tetap menjadi ruang aman.',
+  },
+];
 
 const TABS = [
   { id: 'PENDING', label: 'Menunggu', icon: Clock },
@@ -287,6 +317,7 @@ export default function AdminVerifikasiPage() {
   const [busyId, setBusyId] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [section, setSection] = useState('psikolog');
 
   const lock = () => {
     adminKeyStore.clear();
@@ -294,6 +325,16 @@ export default function AdminVerifikasiPage() {
     setPsychologists([]);
     setRejectTarget(null);
   };
+
+  // Dipakai bagian Kategori & Laporan: true bila error sudah ditangani (kode akses ditolak).
+  const handleSectionError = useCallback((err) => {
+    if (err instanceof ApiError && err.status === 401) {
+      adminKeyStore.clear();
+      setUnlocked(false);
+      return true;
+    }
+    return false;
+  }, []);
 
   // Kode akses diganti / dihapus di backend -> kembali ke form kode akses.
   const handleError = (err) => {
@@ -408,24 +449,43 @@ export default function AdminVerifikasiPage() {
                 <ShieldCheck size={14} />
                 <span>PANEL ADMIN</span>
               </div>
-              <h1 className="psikolog-hero-title">Verifikasi Psikolog</h1>
-              <p className="psikolog-hero-sub">
-                Periksa nomor HIMPSI, SIPP, dan dokumen sebelum menyetujui. Hanya psikolog yang disetujui
-                yang tampil di halaman Cari Psikolog.
-              </p>
+              <h1 className="psikolog-hero-title">{SECTIONS.find((s) => s.id === section).title}</h1>
+              <p className="psikolog-hero-sub">{SECTIONS.find((s) => s.id === section).description}</p>
             </div>
 
-            <div className="psikolog-hero-stat-card">
-              <div className="stat-card-icon-box">
-                <Clock size={22} className="text-sky-600" />
+            {section === 'psikolog' && (
+              <div className="psikolog-hero-stat-card">
+                <div className="stat-card-icon-box">
+                  <Clock size={22} className="text-sky-600" />
+                </div>
+                <div className="stat-card-info">
+                  <span className="stat-card-title">{counts.PENDING} Menunggu</span>
+                  <span className="stat-card-sub">pengajuan perlu ditinjau</span>
+                </div>
               </div>
-              <div className="stat-card-info">
-                <span className="stat-card-title">{counts.PENDING} Menunggu</span>
-                <span className="stat-card-sub">pengajuan perlu ditinjau</span>
-              </div>
-            </div>
+            )}
           </div>
 
+          <nav className="av-section-nav" aria-label="Bagian panel admin">
+            {SECTIONS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={`av-section-btn ${section === id ? 'active' : ''}`}
+                aria-current={section === id ? 'page' : undefined}
+                onClick={() => setSection(id)}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {section === 'kategori' && <CategoryAdmin onError={handleSectionError} />}
+          {section === 'laporan' && <ReportAdmin onError={handleSectionError} />}
+
+          {section === 'psikolog' && (
+          <>
           <div className="av-toolbar">
             <div className="av-tabs" role="tablist">
               {TABS.map(({ id, label, icon: Icon }) => (
@@ -509,6 +569,8 @@ export default function AdminVerifikasiPage() {
                 />
               ))}
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

@@ -378,3 +378,118 @@
     max-width: none;
   }
 }
+
+/* --- Navigasi bagian & komunitas ------------------------------------------ */
+.av-section-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.av-section-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px 12px 0 0;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  margin-bottom: -5px;
+}
+
+.av-section-btn:hover {
+  color: #0369a1;
+}
+
+.av-section-btn.active {
+  color: #0369a1;
+  background: #ffffff;
+  border-color: #e2e8f0;
+  border-bottom-color: #ffffff;
+}
+
+.av-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.av-inline-form {
+  gap: 14px;
+}
+
+.av-inline-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.av-cat-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #0f172a;
+  min-width: 160px;
+}
+
+.av-cat-status {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.av-cat-status.on {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.av-name svg {
+  vertical-align: -2px;
+  color: #dc2626;
+}
+
+.av-reported-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 0 12px 12px 0;
+  background: #f8fafc;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.av-reported-content strong {
+  color: #0f172a;
+}
+
+.av-content-status {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.av-content-status.hidden,
+.av-content-status.deleted {
+  background: #f1f5f9;
+  color: #475569;
+}

@@ -47,3 +47,29 @@ export const verifyPsychologist = async (psychologistId, status, catatan) =>
     method: 'PATCH',
     body: { verification_status: status, catatan: catatan?.trim() || null },
   });
+
+// --- Kategori komunitas -------------------------------------------------------
+
+export const adminListCategories = async () => adminRequest('/admin/categories');
+
+export const adminCreateCategory = async ({ nama, deskripsi }) =>
+  adminRequest('/admin/categories', {
+    method: 'POST',
+    body: { nama_kategori: nama.trim(), deskripsi: deskripsi?.trim() || null },
+  });
+
+export const adminSeedCategories = async () => adminRequest('/admin/categories/defaults', { method: 'POST' });
+
+export const adminUpdateCategory = async (categoryId, patch) =>
+  adminRequest(`/admin/categories/${categoryId}`, { method: 'PATCH', body: patch });
+
+// --- Laporan komunitas ------------------------------------------------------
+
+export const adminListReports = async () => adminRequest('/admin/reports?limit=200');
+
+/** status: 'RESOLVED' | 'REJECTED'. hide: sembunyikan konten yang dilaporkan. */
+export const adminModerateReport = async (reportId, status, hide) =>
+  adminRequest(`/admin/reports/${reportId}`, {
+    method: 'PATCH',
+    body: { status, sembunyikan_konten: Boolean(hide) },
+  });

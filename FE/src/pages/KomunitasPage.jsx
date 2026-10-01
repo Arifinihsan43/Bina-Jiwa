@@ -1,694 +1,461 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DashboardHeader } from '../components/dashboard';
+import PostCard, { PersonaAvatar } from '../components/komunitas/PostCard';
+import ReportModal from '../components/komunitas/ReportModal';
 import '../styles/komunitas.css';
+import { Heart, RefreshCw, Send, ChevronDown, Check, Dices, AlertCircle, PenLine, Users } from 'lucide-react';
 import {
-  Heart,
-  Globe,
-  MapPin,
-  RefreshCw,
-  Smile,
-  Send,
-  MoreHorizontal,
-  Bookmark,
-  Share2,
-  MessageCircle,
-  ShieldCheck,
-  Sparkles,
-  ChevronDown,
-  Moon,
-  Cloud,
-  Sun,
-  Leaf,
-  Users,
-  Flame,
-  Check,
-  CornerDownRight,
-  Info
-} from 'lucide-react';
+  PAGE_SIZE,
+  categoryTone,
+  createPersona,
+  createPost,
+  deletePost,
+  getForumStats,
+  getMyPersona,
+  listCategories,
+  listPosts,
+  randomPersonaName,
+  renamePersona,
+} from '../service/forumService';
 
-const RANDOM_PERSONAS = [
-  'Daun Teduh #42',
-  'Tunas Harapan #81',
-  'Awan Putih #07',
-  'Pelangi Senja #55',
-  'Embun Pagi #63',
-  'Surya Hangat #64',
-  'Bintang Malam #19',
-  'Cahaya Damai #88'
-];
+const ALL = 'ALL';
 
-const CATEGORIES = [
-  'Curhat Anonim',
-  'Burnout Kerja',
-  'Karir & Kecemasan',
-  'Kisah Pemulihan',
-  'Family & Parenting'
-];
+function PersonaSetupCard({ onCreated }) {
+  const [name, setName] = useState(() => randomPersonaName());
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name.trim().length < 3) {
+      setError('Nama persona minimal 3 karakter.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      onCreated(await createPersona(name));
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form className="create-post-card persona-setup-card" onSubmit={handleSubmit}>
+      <div className="persona-setup-head">
+        <PersonaAvatar name={name} className="author-avatar-icon" />
+        <div>
+          <h2 className="persona-setup-title">Pilih nama anonimmu</h2>
+          <p className="author-subtext">
+            Nama ini yang dilihat anggota lain. Identitas aslimu tidak pernah ditampilkan.
+          </p>
+        </div>
+      </div>
+      <div className="persona-setup-row">
+        <input
+          className="add-comment-input"
+          value={name}
+          maxLength={50}
+          onChange={(e) => setName(e.target.value)}
+          aria-label="Nama persona"
+        />
+        <button type="button" className="randomize-persona-btn" onClick={() => setName(randomPersonaName())}>
+          <Dices size={14} />
+          <span>Acak</span>
+        </button>
+        <button type="submit" className="submit-post-btn" disabled={saving}>
+          <span>{saving ? 'Menyimpan…' : 'Mulai Berbagi'}</span>
+        </button>
+      </div>
+      {error && <p className="komunitas-inline-error"><AlertCircle size={13} /> {error}</p>}
+    </form>
+  );
+}
+
+function Composer({ persona, categories, onPersonaChange, onPosted }) {
+  const [categoryId, setCategoryId] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [judul, setJudul] = useState('');
+  const [isi, setIsi] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [error, setError] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) return undefined;
+    const close = (e) => dropdownRef.current && !dropdownRef.current.contains(e.target) && setDropdownOpen(false);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [dropdownOpen]);
+
+  const selectedCategory = categories.find((c) => c.id_category === categoryId);
+
+  const handleRename = async () => {
+    setRenaming(true);
+    setError('');
+    try {
+      onPersonaChange(await renamePersona(randomPersonaName()));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRenaming(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isi.trim() || posting) return;
+    setPosting(true);
+    setError('');
+    try {
+      const created = await createPost({ categoryId, judul, isi });
+      onPosted(created);
+      setJudul('');
+      setIsi('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  return (
+    <form className="create-post-card" onSubmit={handleSubmit}>
+      <div className="create-post-header">
+        <div className="author-info-group">
+          <PersonaAvatar name={persona.nama_persona} className="author-avatar-icon" />
+          <div className="author-details">
+            <div className="author-name-row">
+              <span className="author-name">{persona.nama_persona}</span>
+              <button
+                type="button"
+                className="randomize-persona-btn"
+                onClick={handleRename}
+                disabled={renaming}
+                title="Ganti nama anonim (berlaku untuk semua tulisanmu)"
+              >
+                <RefreshCw size={12} className={renaming ? 'spin' : ''} />
+                <span>Ganti Nama</span>
+              </button>
+            </div>
+            <span className="author-subtext">Identitas aslimu tersembunyi dari anggota lain</span>
+          </div>
+        </div>
+
+        <div className="category-dropdown-container" ref={dropdownRef}>
+          <button
+            type="button"
+            className="category-select-btn"
+            onClick={() => setDropdownOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={dropdownOpen}
+          >
+            <span>{selectedCategory?.nama_kategori || 'Pilih Topik'}</span>
+            <ChevronDown size={14} className={`dropdown-chevron ${dropdownOpen ? 'open' : ''}`} />
+          </button>
+          {dropdownOpen && (
+            <div className="category-dropdown-menu" role="listbox">
+              {[{ id_category: null, nama_kategori: 'Tanpa topik' }, ...categories].map((cat) => (
+                <button
+                  key={cat.id_category || 'none'}
+                  type="button"
+                  role="option"
+                  aria-selected={categoryId === cat.id_category}
+                  className={`category-dropdown-item ${categoryId === cat.id_category ? 'active' : ''}`}
+                  onClick={() => {
+                    setCategoryId(cat.id_category);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  {cat.nama_kategori}
+                  {categoryId === cat.id_category && <Check size={14} className="text-sky-600" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <input
+        className="create-post-title"
+        placeholder="Judul (opsional)"
+        value={judul}
+        maxLength={200}
+        onChange={(e) => setJudul(e.target.value)}
+      />
+      <div className="post-textarea-wrapper">
+        <textarea
+          className="create-post-textarea"
+          placeholder="Bagikan isi hatimu di sini tanpa takut dihakimi... Tuliskan apa yang terasa mengganjal di dadamu hari ini."
+          value={isi}
+          maxLength={5000}
+          onChange={(e) => setIsi(e.target.value)}
+        />
+      </div>
+
+      {error && <p className="komunitas-inline-error"><AlertCircle size={13} /> {error}</p>}
+
+      <div className="create-post-footer">
+        <div className="post-footer-left">
+          <span className="moderated-badge">• Dimoderasi tim Bina Jiwa • {isi.length}/5000</span>
+        </div>
+        <button type="submit" className="submit-post-btn" disabled={!isi.trim() || posting}>
+          <Send size={15} />
+          <span>{posting ? 'Mengirim…' : 'Kirim Anonim'}</span>
+        </button>
+      </div>
+    </form>
+  );
+}
 
 export default function KomunitasPage() {
-  const [selectedScope, setSelectedScope] = useState('seluruh');
-  const [selectedTopic, setSelectedTopic] = useState('Semua Topik');
-  const [selectedSort, setSelectedSort] = useState('relevan');
-  const [selectedCategory, setSelectedCategory] = useState('Curhat Anonim');
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [currentPersonaIndex, setCurrentPersonaIndex] = useState(0);
-  const [postText, setPostText] = useState('');
-  const [activeCommentsPostId, setActiveCommentsPostId] = useState(null);
-  const [commentInputs, setCommentInputs] = useState({});
-  const [hasLoadedMore, setHasLoadedMore] = useState(false);
+  const [persona, setPersona] = useState(null);
+  const [personaLoaded, setPersonaLoaded] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [topic, setTopic] = useState(ALL);
+  const [sort, setSort] = useState('terbaru');
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const [reportTarget, setReportTarget] = useState(null);
 
-  // Initial feed posts matching exact screenshot design & structure
-  const [feedPosts, setFeedPosts] = useState([
-    {
-      id: 1,
-      author: 'Bintang Malam #19',
-      avatarIcon: Moon,
-      scope: 'komunitas',
-      location: 'Komunitas Lokal Jakarta',
-      time: '42 menit lalu',
-      category: 'Karir & Kecemasan',
-      categoryTagType: 'peach',
-      title: 'Bagaimana cara kalian menghadapi imposter syndrome di kantor baru tanpa merasa sendirian?',
-      body: "Sudah masuk minggu ketiga di perusahaan teknologi ini. Setiap rapat rasanya takut sekali kalau pendapatku salah atau ketahuan 'tidak sepintar yang mereka kira'. Jantung sering berdebar sejak malam sebelum hari kerja. Apakah perasaan ini wajar, dan apa afirmasi yang biasa kalian gunakan untuk meredakannya?",
-      hugsCount: 45,
-      hasHugged: false,
-      commentsCount: 23,
-      comments: [
-        {
-          id: 101,
-          author: 'Tunas Harapan #81',
-          time: '15 menit lalu',
-          text: 'Sangat wajar! Ingat mereka merekrutmu karena potensimu, bukan karena kamu harus tahu segalanya di hari pertama. Coba teknik 5-4-3-2-1 grounding kalau dada mulai berdebar.',
-          isHelpful: true
-        },
-        {
-          id: 102,
-          author: 'Surya Hangat #64',
-          time: '28 menit lalu',
-          text: 'Saya juga pernah di posisi itu. Yang bantu saya adalah menuliskan pencapaian kecil tiap jam 5 sore. Kamu tidak sendiri, semangat!',
-          isHelpful: false
-        }
-      ],
-      pinnedReply: {
-        author: 'Tunas Harapan #81',
-        time: '15m lalu',
-        text: '"Sangat wajar! Ingat mereka merekrutmu karena potensimu, bukan karena kamu harus tahu segalanya di hari pertama. Coba teknik 5-4-3-2-1 grounding kalau dada mulai berdebar."'
-      }
-    },
-    {
-      id: 2,
-      author: 'Awan Putih #07',
-      avatarIcon: Cloud,
-      scope: 'seluruh',
-      location: 'Seluruh Indonesia',
-      time: '3 jam lalu',
-      category: 'Kisah Pemulihan',
-      categoryTagType: 'sky',
-      title: 'Sudah 3 minggu rutin jurnal refleksi di Bina Jiwa, rasanya beban pikiran jauh lebih ringan. Semangat buat teman-teman yang sedang berjuang!',
-      body: "Dulu saya skeptis dengan 'menulis perasaan'. Tapi pelan-pelan, setiap subuh saya luangkan waktu 7 menit untuk napas teratur dan menulis 3 hal kecil yang saya syukuri. Buat kalian yang saat ini merasa di titik terendah: badai ini pasti berlalu, jangan ragu meminta bantuan profesional kalau terasa terlalu berat.",
-      mediaUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=1000&auto=format&fit=crop&q=80',
-      mediaCaption: '💡 "Pemulihan bukan perlombaan, tapi proses pulang ke dirimu sendiri."',
-      hugsCount: 112,
-      hasHugged: false,
-      commentsCount: 58,
-      comments: [
-        {
-          id: 201,
-          author: 'Cahaya Damai #88',
-          time: '1 jam lalu',
-          text: 'Terima kasih penguatnya kawan. Subuh ini saya merasa sangat cemas, baca tulisanmu bikin agak lebih tenang.',
-          isHelpful: true
-        }
-      ]
-    },
-    {
-      id: 3,
-      author: 'Embun Pagi #63',
-      avatarIcon: Sun,
-      scope: 'komunitas',
-      location: 'Jawa Barat & Bandung',
-      time: '5 jam lalu',
-      category: 'Curhat Anonim',
-      categoryTagType: 'sky',
-      title: '',
-      body: 'Hanya ingin menitipkan pesan untuk siapapun yang merasa lelah hari ini: bernapaslah pelan. Kamu sudah berusaha sebaik mungkin dengan kekuatan yang kamu miliki sekarang. Cukup untuk hari ini.',
-      hugsCount: 89,
-      hasHugged: false,
-      commentsCount: 17,
-      comments: [
-        {
-          id: 301,
-          author: 'Daun Teduh #42',
-          time: '2 jam lalu',
-          text: 'Pesan ini datang di waktu yang sangat tepat. Terima kasih banyak...',
-          isHelpful: false
-        }
-      ]
+  useEffect(() => {
+    let cancelled = false;
+    getMyPersona()
+      .then((p) => !cancelled && setPersona(p))
+      .catch(() => {})
+      .finally(() => !cancelled && setPersonaLoaded(true));
+    listCategories()
+      .then((rows) => !cancelled && setCategories(rows))
+      .catch(() => {});
+    getForumStats()
+      .then((s) => !cancelled && setStats(s))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Muat ulang feed saat topik / urutan berubah.
+  useEffect(() => {
+    let cancelled = false;
+    listPosts({ categoryId: topic === ALL ? null : topic, sort })
+      .then((rows) => {
+        if (cancelled) return;
+        setPosts(rows);
+        setHasMore(rows.length === PAGE_SIZE);
+        setError('');
+        setNow(Date.now());
+      })
+      .catch((err) => !cancelled && setError(err.message))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [topic, sort, reloadKey]);
+
+  const changeFeed = (update) => {
+    setLoading(true);
+    update();
+  };
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const rows = await listPosts({ categoryId: topic === ALL ? null : topic, sort, offset: posts.length });
+      setPosts((prev) => [...prev, ...rows.filter((r) => !prev.some((p) => p.id_post === r.id_post))]);
+      setHasMore(rows.length === PAGE_SIZE);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingMore(false);
     }
-  ]);
-
-  const handleRandomizePersona = () => {
-    setCurrentPersonaIndex((prev) => (prev + 1) % RANDOM_PERSONAS.length);
   };
 
-  const handleToggleHug = (postId) => {
-    setFeedPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            hugsCount: post.hasHugged ? post.hugsCount - 1 : post.hugsCount + 1,
-            hasHugged: !post.hasHugged
-          };
-        }
-        return post;
-      })
-    );
+  const updatePost = (updated) =>
+    setPosts((prev) => prev.map((p) => (p.id_post === updated.id_post ? updated : p)));
+
+  const handleDelete = async (post) => {
+    try {
+      await deletePost(post.id_post);
+      setPosts((prev) => prev.filter((p) => p.id_post !== post.id_post));
+      setStats((s) => (s ? { ...s, jumlah_cerita: Math.max(0, s.jumlah_cerita - 1) } : s));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleCreatePost = (e) => {
-    e.preventDefault();
-    if (!postText.trim()) return;
-
-    const categoryTagMap = {
-      'Curhat Anonim': 'sky',
-      'Burnout Kerja': 'purple',
-      'Karir & Kecemasan': 'peach',
-      'Kisah Pemulihan': 'sky',
-      'Family & Parenting': 'peach'
-    };
-
-    const newPost = {
-      id: Date.now(),
-      author: RANDOM_PERSONAS[currentPersonaIndex],
-      avatarIcon: Leaf,
-      scope: selectedScope,
-      location: selectedScope === 'seluruh' ? 'Seluruh Indonesia' : 'Komunitas Lokal Jabodetabek',
-      time: 'Baru saja',
-      category: selectedCategory,
-      categoryTagType: categoryTagMap[selectedCategory] || 'sky',
-      title: postText.length > 70 ? postText.slice(0, 60) + '...' : '',
-      body: postText,
-      hugsCount: 1,
-      hasHugged: true,
-      commentsCount: 0,
-      comments: []
-    };
-
-    setFeedPosts([newPost, ...feedPosts]);
-    setPostText('');
+  const handlePosted = (created) => {
+    setNow(Date.now());
+    if (topic === ALL || topic === created.id_category) setPosts((prev) => [created, ...prev]);
+    setStats((s) => (s ? { ...s, jumlah_cerita: s.jumlah_cerita + 1 } : s));
   };
-
-  const handleToggleComments = (postId) => {
-    setActiveCommentsPostId((prev) => (prev === postId ? null : postId));
-  };
-
-  const handleAddComment = (postId) => {
-    const text = commentInputs[postId];
-    if (!text || !text.trim()) return;
-
-    setFeedPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const newComment = {
-            id: Date.now(),
-            author: RANDOM_PERSONAS[currentPersonaIndex],
-            time: 'Baru saja',
-            text: text.trim(),
-            isHelpful: false
-          };
-          return {
-            ...post,
-            commentsCount: post.commentsCount + 1,
-            comments: [...(post.comments || []), newComment]
-          };
-        }
-        return post;
-      })
-    );
-
-    setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
-  };
-
-  const handleLoadMore = () => {
-    if (hasLoadedMore) return;
-
-    const morePosts = [
-      {
-        id: 4,
-        author: 'Pelangi Senja #55',
-        avatarIcon: Sun,
-        scope: 'komunitas',
-        location: 'Komunitas Lokal Surabaya',
-        time: '7 jam lalu',
-        category: 'Burnout Kerja',
-        categoryTagType: 'purple',
-        title: 'Menghadapi burnout di tengah deadline menumpuk: bagaimana cara kalian menetapkan batas (boundary) dengan atasan?',
-        body: 'Rasanya energi sudah di titik nol setiap sore. Saya mulai belajar berani mengomunikasikan batas waktu pengerjaan tugas secara sopan tanpa merasa bersalah. Bagaimana pengalaman teman-teman?',
-        hugsCount: 62,
-        hasHugged: false,
-        commentsCount: 18,
-        comments: []
-      },
-      {
-        id: 5,
-        author: 'Surya Hangat #64',
-        avatarIcon: Leaf,
-        scope: 'seluruh',
-        location: 'Seluruh Indonesia',
-        time: '9 jam lalu',
-        category: 'Family & Parenting',
-        categoryTagType: 'peach',
-        title: 'Merawat kesehatan mental sebagai orang tua baru di era media sosial.',
-        body: 'Seringkali merasa overwhelmed dengan perbandingan standar parenting di internet. Hari ini belajar menerima bahwa menjadi orang tua tidak harus sempurna, yang penting hadir sepenuhnya.',
-        hugsCount: 74,
-        hasHugged: false,
-        commentsCount: 31,
-        comments: []
-      }
-    ];
-
-    setFeedPosts((prev) => [...prev, ...morePosts]);
-    setHasLoadedMore(true);
-  };
-
-  // Filter posts based on active scope & topic
-  const filteredPosts = feedPosts
-    .filter((post) => {
-      // Scope filter
-      if (selectedScope === 'komunitas' && post.scope !== 'komunitas') return false;
-      // Topic filter
-      if (selectedTopic === 'Curhat Anonim' && post.category !== 'Curhat Anonim') return false;
-      if (selectedTopic === 'Burnout Kerja' && post.category !== 'Burnout Kerja') return false;
-      if (selectedTopic === 'Family & Parenting' && post.category !== 'Family & Parenting') return false;
-      if (selectedTopic === 'Kecemasan & Stress' && !post.category.includes('Kecemasan')) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      if (selectedSort === 'relevan') {
-        return b.hugsCount + b.commentsCount - (a.hugsCount + a.commentsCount);
-      }
-      return b.id - a.id;
-    });
 
   return (
     <div className="db-main-content">
       <DashboardHeader />
 
-        <div className="komunitas-page-container">
-          <div className="komunitas-content-wrapper">
-            
-            {/* Dashed Accent Line Top Border Container */}
-            <div className="komunitas-dashed-divider" />
+      <div className="komunitas-page-container">
+        <div className="komunitas-content-wrapper">
+          <div className="komunitas-dashed-divider" />
 
-            {/* 1. Hero Section */}
-            <div className="komunitas-hero-section">
-              <div className="komunitas-hero-left">
-                <div className="komunitas-safe-badge">
-                  <span className="safe-dot" />
-                  <span>Ruang Aman • Terjaga Anonimitas 100%</span>
-                </div>
-                <h1 className="komunitas-hero-title">Lingkar Rasa &amp; Ruang Berbagi</h1>
-                <p className="komunitas-hero-sub">
-                  Di sini, suaramu didengar tanpa prasangka. Berbagi beban dengan sesama pejuang jiwa
-                  atau konsultasikan langkah pemulihanmu dengan psikolog berlisensi.
-                </p>
+          {/* 1. Hero */}
+          <div className="komunitas-hero-section">
+            <div className="komunitas-hero-left">
+              <div className="komunitas-safe-badge">
+                <span className="safe-dot" />
+                <span>Ruang Aman • Identitas Asli Tidak Ditampilkan</span>
               </div>
-
-              {/* Stat card on top right */}
-              <div className="komunitas-hero-stat-card">
-                <div className="stat-card-icon">
-                  <Heart size={22} className="fill-sky-500 text-sky-500" />
-                </div>
-                <div className="stat-card-content">
-                  <span className="stat-card-tag">TUMBUH BERSAMA</span>
-                  <span className="stat-card-number">4,812 Jiwa</span>
-                  <span className="stat-card-label">Terhubung</span>
-                </div>
-              </div>
+              <h1 className="komunitas-hero-title">Lingkar Rasa &amp; Ruang Berbagi</h1>
+              <p className="komunitas-hero-sub">
+                Di sini, suaramu didengar tanpa prasangka. Berbagi beban dengan sesama pejuang jiwa
+                dan dapatkan balasan hangat — termasuk dari psikolog terverifikasi.
+              </p>
             </div>
 
-            {/* 2. Filter & Scope Selection Bar */}
-            <div className="komunitas-filter-card">
-              {/* Lingkup Berbagi */}
-              <div className="scope-filter-row">
-                <span className="filter-label">
-                  <Globe size={16} className="text-sky-600" />
-                  Lingkup Berbagi:
+            <div className="komunitas-hero-stat-card">
+              <div className="stat-card-icon">
+                <Heart size={22} className="fill-sky-500 text-sky-500" />
+              </div>
+              <div className="stat-card-content">
+                <span className="stat-card-tag">TUMBUH BERSAMA</span>
+                <span className="stat-card-number">
+                  {stats ? `${stats.jumlah_anggota.toLocaleString('id-ID')} Jiwa` : '…'}
                 </span>
-                <div className="scope-pills-group">
-                  <button
-                    type="button"
-                    className={`scope-btn ${selectedScope === 'seluruh' ? 'active' : ''}`}
-                    onClick={() => setSelectedScope('seluruh')}
-                  >
-                    <Globe size={15} />
-                    <span>Seluruh Indonesia</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`scope-btn ${selectedScope === 'komunitas' ? 'active' : ''}`}
-                    onClick={() => setSelectedScope('komunitas')}
-                  >
-                    <MapPin size={15} className="text-rose-500" />
-                    <span>Komunitas Lokal (Jabodetabek)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Topik Chips */}
-              <div className="topic-filter-row">
-                <span className="filter-label">Topik:</span>
-                <div className="topic-chips-group">
-                  {[
-                    'Semua Topik',
-                    'Curhat Anonim',
-                    'Burnout Kerja',
-                    'Family & Parenting',
-                    'Kecemasan & Stress'
-                  ].map((topic) => (
-                    <button
-                      key={topic}
-                      type="button"
-                      className={`topic-chip-btn ${selectedTopic === topic ? 'active' : ''}`}
-                      onClick={() => setSelectedTopic(topic)}
-                    >
-                      {topic}
-                    </button>
-                  ))}
-                </div>
+                <span className="stat-card-label">
+                  {stats ? `${stats.jumlah_cerita.toLocaleString('id-ID')} cerita dibagikan` : 'Terhubung'}
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* 3. Create Anonymous Post Card */}
-            <form className="create-post-card" onSubmit={handleCreatePost}>
-              <div className="create-post-header">
-                <div className="author-info-group">
-                  <div className="author-avatar-icon">
-                    <Leaf size={20} />
-                  </div>
-                  <div className="author-details">
-                    <div className="author-name-row">
-                      <span className="author-name">{RANDOM_PERSONAS[currentPersonaIndex]}</span>
-                      <button
-                        type="button"
-                        className="randomize-persona-btn"
-                        onClick={handleRandomizePersona}
-                        title="Acak Identitas Anonim"
-                      >
-                        <RefreshCw size={12} />
-                        <span>Acak Persona</span>
-                      </button>
-                    </div>
-                    <span className="author-subtext">
-                      Identitas pribadimu dienkripsi &amp; tersembunyi
-                    </span>
-                  </div>
-                </div>
-
-                {/* Category Dropdown Picker */}
-                <div className="category-dropdown-container">
+          {/* 2. Filter topik */}
+          <div className="komunitas-filter-card">
+            <div className="topic-filter-row">
+              <span className="filter-label">Topik:</span>
+              <div className="topic-chips-group">
+                {[{ id_category: ALL, nama_kategori: 'Semua Topik' }, ...categories].map((cat) => (
                   <button
+                    key={cat.id_category}
                     type="button"
-                    className="category-select-btn"
-                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    className={`topic-chip-btn ${topic === cat.id_category ? 'active' : ''}`}
+                    onClick={() => topic !== cat.id_category && changeFeed(() => setTopic(cat.id_category))}
+                    aria-pressed={topic === cat.id_category}
                   >
-                    <span>{selectedCategory}</span>
-                    <ChevronDown size={14} className={`dropdown-chevron ${isCategoryDropdownOpen ? 'open' : ''}`} />
+                    {cat.nama_kategori}
                   </button>
-
-                  {isCategoryDropdownOpen && (
-                    <div className="category-dropdown-menu">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          className={`category-dropdown-item ${selectedCategory === cat ? 'active' : ''}`}
-                          onClick={() => {
-                            setSelectedCategory(cat);
-                            setIsCategoryDropdownOpen(false);
-                          }}
-                        >
-                          {cat}
-                          {selectedCategory === cat && <Check size={14} className="text-sky-600" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                ))}
               </div>
+            </div>
+          </div>
 
-              {/* Textarea Input Container */}
-              <div className="post-textarea-wrapper">
-                <textarea
-                  className="create-post-textarea"
-                  placeholder="Bagikan isi hatimu di sini tanpa takut dihakimi... Tuliskan apa yang terasa mengganjal di dadamu hari ini."
-                  value={postText}
-                  onChange={(e) => setPostText(e.target.value)}
+          {/* 3. Persona / tulis cerita */}
+          {!personaLoaded ? null : persona ? (
+            <Composer
+              persona={persona}
+              categories={categories}
+              onPersonaChange={setPersona}
+              onPosted={handlePosted}
+            />
+          ) : (
+            <PersonaSetupCard
+              onCreated={(p) => {
+                setPersona(p);
+                setStats((s) => (s ? { ...s, jumlah_anggota: s.jumlah_anggota + 1 } : s));
+              }}
+            />
+          )}
+
+          {/* 4. Feed header */}
+          <div className="feed-header-row">
+            <div className="feed-title-group">
+              <h2 className="feed-title">Diskusi Terkini</h2>
+              <button
+                type="button"
+                className="feed-refresh-btn"
+                onClick={() => changeFeed(() => setReloadKey((k) => k + 1))}
+                title="Muat ulang"
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
+
+            <div className="feed-sort-group">
+              <span>Urutkan: </span>
+              <button
+                type="button"
+                className={`sort-link-btn ${sort === 'populer' ? 'active' : ''}`}
+                onClick={() => sort !== 'populer' && changeFeed(() => setSort('populer'))}
+              >
+                Paling Didukung
+              </button>
+              <span className="sort-dot">•</span>
+              <button
+                type="button"
+                className={`sort-link-btn ${sort === 'terbaru' ? 'active' : ''}`}
+                onClick={() => sort !== 'terbaru' && changeFeed(() => setSort('terbaru'))}
+              >
+                Terbaru
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="auth-error-alert">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* 5. Feed */}
+          <div className="feed-cards-list">
+            {loading ? (
+              <div className="feed-empty-state">Memuat cerita komunitas…</div>
+            ) : posts.length === 0 ? (
+              <div className="feed-empty-state">
+                {topic === ALL ? <PenLine size={28} /> : <Users size={28} />}
+                <strong>{topic === ALL ? 'Belum ada cerita' : 'Belum ada cerita di topik ini'}</strong>
+                <span>
+                  {sort === 'populer'
+                    ? 'Belum ada cerita yang mendapat dukungan dalam 30 hari terakhir.'
+                    : 'Jadilah yang pertama berbagi — ceritamu bisa menguatkan orang lain.'}
+                </span>
+              </div>
+            ) : (
+              posts.map((post) => (
+                <PostCard
+                  key={post.id_post}
+                  post={post}
+                  now={now}
+                  persona={persona}
+                  categoryTone={categoryTone(categories, post.id_category)}
+                  onChange={updatePost}
+                  onDelete={handleDelete}
+                  onReport={setReportTarget}
                 />
-              </div>
-
-              {/* Post Footer Actions */}
-              <div className="create-post-footer">
-                <div className="post-footer-left">
-                  <button type="button" className="post-tool-btn" title="Tambah Emoji">
-                    <Smile size={18} />
-                  </button>
-                  <button type="button" className="post-tool-btn" title="Kutipan Bahasa">
-                    <span className="quote-mark font-serif">”</span>
-                  </button>
-                  <span className="moderated-badge">• Aman &amp; Dimoderasi AI</span>
-                </div>
-
-                <button type="submit" className="submit-post-btn">
-                  <Send size={15} />
-                  <span>Kirim Anonim</span>
-                </button>
-              </div>
-            </form>
-
-            {/* 4. Feed Header Section */}
-            <div className="feed-header-row">
-              <div className="feed-title-group">
-                <h2 className="feed-title">Diskusi Terkini</h2>
-                <span className="live-badge">
-                  <span className="live-dot" />
-                  <span>Live</span>
-                </span>
-              </div>
-
-              <div className="feed-sort-group">
-                <span>Urutkan: </span>
-                <button
-                  type="button"
-                  className={`sort-link-btn ${selectedSort === 'relevan' ? 'active' : ''}`}
-                  onClick={() => setSelectedSort('relevan')}
-                >
-                  Paling Relevan
-                </button>
-                <span className="sort-dot">•</span>
-                <button
-                  type="button"
-                  className={`sort-link-btn ${selectedSort === 'terbaru' ? 'active' : ''}`}
-                  onClick={() => setSelectedSort('terbaru')}
-                >
-                  Terbaru
-                </button>
-              </div>
-            </div>
-
-            {/* 5. Feed Items List */}
-            <div className="feed-cards-list">
-              {filteredPosts.map((post) => {
-                const IconComponent = post.avatarIcon || Leaf;
-                const isCommentsOpen = activeCommentsPostId === post.id;
-
-                return (
-                  <article key={post.id} className="post-card">
-                    {/* Post Card Header */}
-                    <div className="post-card-header">
-                      <div className="post-author-group">
-                        <div className="post-avatar-box">
-                          <IconComponent size={20} />
-                        </div>
-                        <div className="post-author-meta">
-                          <div className="post-author-top">
-                            <h3 className="post-author-name">{post.author}</h3>
-                            <span className="location-tag">
-                              {post.scope === 'komunitas' ? (
-                                <MapPin size={12} className="text-rose-500" />
-                              ) : (
-                                <Globe size={12} className="text-sky-500" />
-                              )}
-                              {post.location}
-                            </span>
-                            <span className="post-time">• {post.time}</span>
-                          </div>
-
-                          <span className={`category-tag-pill tag-${post.categoryTagType}`}>
-                            {post.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button type="button" className="more-options-btn" title="Opsi Diskusi">
-                        <MoreHorizontal size={18} />
-                      </button>
-                    </div>
-
-                    {/* Post Title & Text */}
-                    {post.title && <h3 className="post-title">{post.title}</h3>}
-                    <p className="post-body-text">{post.body}</p>
-
-                    {/* Media Image Attachment with Overlay Badge if Present */}
-                    {post.mediaUrl && (
-                      <div className="post-media-container">
-                        <img
-                          src={post.mediaUrl}
-                          alt="Media Refleksi"
-                          className="post-media-image"
-                        />
-                        {post.mediaCaption && (
-                          <div className="post-media-overlay">
-                            <span>{post.mediaCaption}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Actions Row */}
-                    <div className="post-actions-row">
-                      <div className="left-action-buttons">
-                        <button
-                          type="button"
-                          className={`hug-btn ${post.hasHugged ? 'hugged' : ''}`}
-                          onClick={() => handleToggleHug(post.id)}
-                        >
-                          <Flame
-                            size={16}
-                            className={post.hasHugged ? 'fill-orange-500 text-orange-500' : ''}
-                          />
-                          <span>Peluk Hangat #{post.hugsCount}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`comment-btn ${isCommentsOpen ? 'active' : ''}`}
-                          onClick={() => handleToggleComments(post.id)}
-                        >
-                          <MessageCircle size={16} />
-                          <span>{post.commentsCount} Komentar Empati</span>
-                        </button>
-                      </div>
-
-                      <div className="right-action-icons">
-                        <button type="button" className="action-icon-btn" title="Simpan Post">
-                          <Bookmark size={18} />
-                        </button>
-                        <button type="button" className="action-icon-btn" title="Bagikan">
-                          <Share2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Pinned Empathetic Reply Box */}
-                    {post.pinnedReply && (
-                      <div className="pinned-reply-box">
-                        <div className="pinned-reply-header">
-                          <div className="reply-author-info">
-                            <Leaf size={15} />
-                            <span className="font-bold">{post.pinnedReply.author}</span>
-                            <span className="reply-time-text">• {post.pinnedReply.time}</span>
-                          </div>
-
-                          <div className="reply-badge">
-                            <ShieldCheck size={13} />
-                            <span>Jawaban Membantu</span>
-                          </div>
-                        </div>
-
-                        <p className="pinned-reply-text">{post.pinnedReply.text}</p>
-                      </div>
-                    )}
-
-                    {/* Expanded Interactive Comments Section */}
-                    {isCommentsOpen && (
-                      <div className="comments-expand-section">
-                        <div className="comments-divider" />
-                        
-                        {/* Comments List */}
-                        <div className="comments-list">
-                          {post.comments && post.comments.length > 0 ? (
-                            post.comments.map((comment) => (
-                              <div key={comment.id} className="comment-item">
-                                <div className="comment-item-avatar">
-                                  <Leaf size={14} />
-                                </div>
-                                <div className="comment-item-content">
-                                  <div className="comment-item-header">
-                                    <span className="comment-author">{comment.author}</span>
-                                    <span className="comment-time">• {comment.time}</span>
-                                    {comment.isHelpful && (
-                                      <span className="helpful-mini-tag">
-                                        <ShieldCheck size={11} /> Jawaban Membantu
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="comment-text">{comment.text}</p>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="no-comments-text">Belum ada komentar empati. Jadilah yang pertama memberikan kata penguatan.</p>
-                          )}
-                        </div>
-
-                        {/* Add Comment Input Bar */}
-                        <div className="add-comment-bar">
-                          <input
-                            type="text"
-                            className="add-comment-input"
-                            placeholder={`Balas sebagai ${RANDOM_PERSONAS[currentPersonaIndex]}...`}
-                            value={commentInputs[post.id] || ''}
-                            onChange={(e) =>
-                              setCommentInputs({ ...commentInputs, [post.id]: e.target.value })
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleAddComment(post.id);
-                            }}
-                          />
-                          <button
-                            type="button"
-                            className="submit-comment-btn"
-                            onClick={() => handleAddComment(post.id)}
-                          >
-                            <Send size={14} />
-                            <span>Kirim</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-
-            {/* Bottom Load More Button */}
-            {!hasLoadedMore && (
-              <div className="load-more-wrapper">
-                <button
-                  type="button"
-                  className="load-more-btn"
-                  onClick={handleLoadMore}
-                >
-                  <RefreshCw size={15} />
-                  <span>Muat Cerita Komunitas Lainnya</span>
-                </button>
-              </div>
+              ))
             )}
           </div>
+
+          {hasMore && !loading && (
+            <div className="load-more-wrapper">
+              <button type="button" className="load-more-btn" onClick={handleLoadMore} disabled={loadingMore}>
+                <RefreshCw size={15} />
+                <span>{loadingMore ? 'Memuat…' : 'Muat Cerita Komunitas Lainnya'}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {reportTarget && <ReportModal target={reportTarget} onClose={() => setReportTarget(null)} />}
+    </div>
   );
 }
-
