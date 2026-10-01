@@ -73,3 +73,20 @@ export const adminModerateReport = async (reportId, status, hide) =>
     method: 'PATCH',
     body: { status, sembunyikan_konten: Boolean(hide) },
   });
+
+// --- Events & workshop -------------------------------------------------------
+
+export const adminListEvents = async () => adminRequest('/admin/events');
+
+export const adminCreateEvent = async (data) => adminRequest('/admin/events', { method: 'POST', body: data });
+
+export const adminUpdateEvent = async (eventId, patch) =>
+  adminRequest(`/admin/events/${eventId}`, { method: 'PATCH', body: patch });
+
+export const adminListEventParticipants = async (eventId) => adminRequest(`/admin/events/${eventId}/participants`);
+
+export const adminSetAttendance = async (eventId, userId, attended) =>
+  adminRequest(`/admin/events/${eventId}/participants/${userId}`, {
+    method: 'PATCH',
+    body: { status: attended ? 'ATTENDED' : 'REGISTERED' },
+  });

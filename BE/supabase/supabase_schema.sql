@@ -296,7 +296,9 @@ comment on table public.messages is 'Pesan dalam sebuah conversation';
 -- =====================================================================
 create table public.events (
     id_event           uuid primary key default gen_random_uuid(),
-    id_creator         uuid not null references public.profiles (id_user) on delete cascade,
+    id_creator         uuid references public.profiles (id_user) on delete set null, -- null = dibuat admin
+    penyelenggara      varchar(150),
+    penyelenggara_info varchar(200),
     judul              varchar(200) not null,
     deskripsi          text,
     gambar_url         varchar(500),
@@ -1003,17 +1005,6 @@ create policy "events_select_visible"
     to authenticated
     using (status = 'PUBLISHED' or auth.uid() = id_creator or public.is_admin());
 
-create policy "events_insert_own"
-    on public.events for insert
-    to authenticated
-    with check (auth.uid() = id_creator);
-
-create policy "events_update_own_or_admin"
-    on public.events for update
-    to authenticated
-    using (auth.uid() = id_creator or public.is_admin())
-    with check (auth.uid() = id_creator or public.is_admin());
-
 -- ---------------------------------------------------------------------
 -- EVENT_PARTICIPANTS
 -- ---------------------------------------------------------------------
@@ -1304,4 +1295,110 @@ drop trigger if exists trg_protect_message_insert on public.messages;
 create trigger trg_protect_message_insert
     before insert on public.messages
     for each row execute function public.protect_message_insert();
+
+-- =====================================================================
+-- PENGAMAN EVENTS & WORKSHOP (lihat migrations/20261001_events.sql)
+-- Event dibuat & dikelola admin (service role); user hanya mendaftar.
+-- =====================================================================
+create or replace function public.check_event_seat(p_id_event uuid, p_id_user uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    v_event public.events%rowtype;
+    v_taken integer;
+begin
+    select * into v_event from public.events where id_event = p_id_event for update;
+
+    if not found or v_event.status <> 'PUBLISHED' then
+        raise exception 'Event tidak menerima pendaftaran' using errcode = '42501';
+    end if;
+    if now() >= coalesce(v_event.batas_pendaftaran, v_event.tanggal_mulai) then
+        raise exception 'Pendaftaran event ini sudah ditutup' using errcode = '42501';
+    end if;
+
+    if v_event.kapasitas is not null then
+        select count(*) into v_taken
+        from public.event_participants
+        where id_event = p_id_event
+          and id_user <> p_id_user
+          and status in ('REGISTERED', 'ATTENDED');
+        if v_taken >= v_event.kapasitas then
+            raise exception 'Kursi event sudah penuh' using errcode = '23P01';
+        end if;
+    end if;
+end;
+$$;
+
+revoke execute on function public.check_event_seat(uuid, uuid) from public, anon, authenticated;
+
+create or replace function public.protect_event_participant_insert()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if coalesce(auth.role(), '') not in ('anon', 'authenticated') then
+        return new;
+    end if;
+    perform public.check_event_seat(new.id_event, new.id_user);
+    new.status := 'REGISTERED';
+    new.attended_at := null;
+    new.registered_at := now();
+    return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_event_participant_insert on public.event_participants;
+create trigger trg_protect_event_participant_insert
+    before insert on public.event_participants
+    for each row execute function public.protect_event_participant_insert();
+
+-- ---------------------------------------------------------------------
+-- 4. Peserta hanya boleh: REGISTERED -> CANCELLED (sebelum mulai) dan
+--    CANCELLED -> REGISTERED (daftar ulang, cek kursi lagi).
+--    Tanda hadir (ATTENDED) hanya oleh admin lewat Panel Admin.
+-- ---------------------------------------------------------------------
+create or replace function public.protect_event_participant_update()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    v_mulai timestamptz;
+begin
+    if coalesce(auth.role(), '') not in ('anon', 'authenticated') then
+        return new;
+    end if;
+
+    if new.id_event is distinct from old.id_event
+       or new.id_user is distinct from old.id_user
+       or old.id_user is distinct from auth.uid() then
+        raise exception 'Tidak diizinkan' using errcode = '42501';
+    end if;
+
+    if new.status is distinct from old.status then
+        select tanggal_mulai into v_mulai from public.events where id_event = old.id_event;
+        if old.status = 'REGISTERED' and new.status = 'CANCELLED' then
+            if now() >= v_mulai then
+                raise exception 'Event sudah dimulai' using errcode = '42501';
+            end if;
+        elsif old.status = 'CANCELLED' and new.status = 'REGISTERED' then
+            perform public.check_event_seat(old.id_event, old.id_user);
+            new.registered_at := now();
+        else
+            raise exception 'Perubahan status pendaftaran tidak diizinkan' using errcode = '42501';
+        end if;
+    end if;
+
+    new.attended_at := old.attended_at;
+    return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_event_participant_update on public.event_participants;
+create trigger trg_protect_event_participant_update
+    before update on public.event_participants
+    for each row execute function public.protect_event_participant_update();
 

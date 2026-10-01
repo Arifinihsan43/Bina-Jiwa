@@ -3,10 +3,12 @@ from supabase import Client
 
 from app.core.security import require_admin_key
 from app.schemas.common import Message
+from app.schemas.event import EventCreate, EventOut, EventParticipantOut, EventUpdate, ParticipantUpdate
 from app.schemas.forum import CategoryCreate, CategoryOut, CategoryUpdate
 from app.schemas.psychologist import PsychologistOut, PsychologistVerify, VerificationStatus
 from app.schemas.report import AdminReportModerate, AdminReportOut, ReportStatus
-from app.services import forum_service, psychologist_service, report_service
+from app.core.errors import bad_request
+from app.services import event_service, forum_service, psychologist_service, report_service
 
 DEFAULT_CATEGORIES = [
     ("Curhat Anonim", "Ruang bebas untuk menuangkan isi hati tanpa dihakimi."),
@@ -96,3 +98,41 @@ def admin_moderate_report(
 ) -> AdminReportOut:
     report_service.moderate_report(client, report_id, payload.status, payload.sembunyikan_konten)
     return report_service.list_reports_with_preview(client, None, 1, report_id=report_id)[0]
+
+
+# --- events & workshop -------------------------------------------------------
+# Proposal masuk lewat email; admin yang membuat, mempublikasikan, dan mengelola.
+
+@router.get("/events", response_model=list[EventOut])
+def admin_list_events(client: Client = Depends(require_admin_key)) -> list[EventOut]:
+    return event_service.admin_list_events(client)
+
+
+@router.post("/events", response_model=EventOut, status_code=201)
+def admin_create_event(payload: EventCreate, client: Client = Depends(require_admin_key)) -> EventOut:
+    return event_service.admin_create_event(client, payload.model_dump(mode="json"))
+
+
+@router.patch("/events/{event_id}", response_model=EventOut)
+def admin_update_event(
+    event_id: str, payload: EventUpdate, client: Client = Depends(require_admin_key)
+) -> EventOut:
+    body = payload.model_dump(mode="json", exclude_unset=True)
+    return event_service.admin_update_event(client, event_id, body)
+
+
+@router.get("/events/{event_id}/participants", response_model=list[EventParticipantOut])
+def admin_list_event_participants(
+    event_id: str, client: Client = Depends(require_admin_key)
+) -> list[EventParticipantOut]:
+    return event_service.admin_list_participants(client, event_id)
+
+
+@router.patch("/events/{event_id}/participants/{user_id}", response_model=EventParticipantOut)
+def admin_update_event_participant(
+    event_id: str, user_id: str, payload: ParticipantUpdate, client: Client = Depends(require_admin_key)
+) -> EventParticipantOut:
+    """Tandai hadir (ATTENDED) atau batalkan tanda hadir (REGISTERED)."""
+    if payload.status == "CANCELLED":
+        raise bad_request("Gunakan status ATTENDED atau REGISTERED untuk absensi")
+    return event_service.admin_set_attendance(client, event_id, user_id, attended=payload.status == "ATTENDED")

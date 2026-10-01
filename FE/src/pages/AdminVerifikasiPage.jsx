@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import BinaJiwaLogo from '../components/common/BinaJiwaLogo';
 import CategoryAdmin from '../components/admin/CategoryAdmin';
 import ReportAdmin from '../components/admin/ReportAdmin';
+import EventAdmin from '../components/admin/EventAdmin';
 import '../styles/psikolog.css';
 import '../styles/profil-psikolog.css';
 import '../styles/admin-verifikasi.css';
@@ -24,6 +25,7 @@ import {
   Stethoscope,
   Tags,
   Flag,
+  CalendarDays,
 } from 'lucide-react';
 import { splitSpecializations, safeExternalUrl } from '../service/psychologistService';
 import {
@@ -42,6 +44,13 @@ const SECTIONS = [
     title: 'Verifikasi Psikolog',
     description:
       'Periksa nomor HIMPSI, SIPP, dan dokumen sebelum menyetujui. Hanya psikolog yang disetujui yang tampil di halaman Cari Psikolog.',
+  },
+  {
+    id: 'events',
+    label: 'Events & Workshop',
+    icon: CalendarDays,
+    title: 'Events & Workshop',
+    description: 'Buat event dari proposal yang masuk lewat email, publikasikan, dan kelola peserta serta absensinya.',
   },
   {
     id: 'kategori',
@@ -481,6 +490,7 @@ export default function AdminVerifikasiPage() {
             ))}
           </nav>
 
+          {section === 'events' && <EventAdmin onError={handleSectionError} />}
           {section === 'kategori' && <CategoryAdmin onError={handleSectionError} />}
           {section === 'laporan' && <ReportAdmin onError={handleSectionError} />}
 
