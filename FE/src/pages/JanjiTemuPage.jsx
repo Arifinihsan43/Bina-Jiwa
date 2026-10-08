@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/dashboard';
 import '../styles/janji-temu.css';
+import '../styles/payment.css';
+import { PaymentModal } from '../components/payment/PaymentPanel';
 import {
   Clock,
   MessageSquare,
@@ -13,12 +15,14 @@ import {
   Link2,
   CalendarX,
   RefreshCw,
+  Wallet,
 } from 'lucide-react';
 import {
   formatAppointmentRange,
   listMyAppointments,
   updateAppointment,
 } from '../service/appointmentService';
+import { PAYMENT_STATUS, formatRupiah } from '../service/paymentService';
 
 const STATUS_META = {
   PENDING: { cls: 'menunggu', label: 'Menunggu konfirmasi' },
@@ -44,7 +48,7 @@ const initialsOf = (name = '') =>
     .map((w) => w[0].toUpperCase())
     .join('') || '?';
 
-function AppointmentCard({ apt, userId, now, busy, onUpdate }) {
+function AppointmentCard({ apt, userId, now, busy, onUpdate, onPay }) {
   const navigate = useNavigate();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [editingLink, setEditingLink] = useState(false);
@@ -54,7 +58,11 @@ function AppointmentCard({ apt, userId, now, busy, onUpdate }) {
   const counterpart = asClient
     ? { name: apt.psikolog?.nama_profesional || 'Psikolog', role: 'Psikolog' }
     : { name: apt.klien?.nama_lengkap || 'Klien', role: 'Klien' };
-  const status = STATUS_META[apt.status];
+  const status = apt.perlu_bayar
+    ? { cls: 'menunggu', label: asClient ? 'Menunggu pembayaran' : 'Menunggu pembayaran klien' }
+    : STATUS_META[apt.status];
+  const payment = apt.pembayaran;
+  const paymentBadge = payment && ['PAID', 'REFUNDED'].includes(payment.status) ? PAYMENT_STATUS[payment.status] : null;
   const isUpcoming = new Date(apt.tanggal_selesai).getTime() > now;
   const hasStarted = new Date(apt.tanggal_mulai).getTime() <= now;
   const isActive = apt.status === 'PENDING' || apt.status === 'CONFIRMED';
@@ -97,8 +105,34 @@ function AppointmentCard({ apt, userId, now, busy, onUpdate }) {
           ) : (
             <span className="jt-venue-text">{apt.lokasi}</span>
           )}
+          {paymentBadge && (
+            <span className={`pay-status ${paymentBadge.cls}`}>
+              <Wallet size={12} /> {paymentBadge.label} · {formatRupiah(payment.total)}
+            </span>
+          )}
         </div>
       </div>
+
+      {apt.perlu_bayar && isUpcoming && (
+        asClient ? (
+          <div className="pay-alert">
+            <span className="pay-alert-info">
+              <Wallet size={15} />
+              Selesaikan pembayaran {formatRupiah(apt.tarif_sesi)} + biaya layanan agar psikolog dapat mengonfirmasi sesi.
+              Janji temu otomatis dibatalkan bila tidak dibayar sampai batas waktu.
+            </span>
+            <button type="button" className="jt-btn-confirm" onClick={() => onPay(apt)}>
+              <Wallet size={15} /> Bayar Sekarang
+            </button>
+          </div>
+        ) : (
+          <div className="pay-alert muted">
+            <span className="pay-alert-info">
+              <Clock size={15} /> Klien belum menyelesaikan pembayaran. Sesi bisa dikonfirmasi setelah lunas.
+            </span>
+          </div>
+        )
+      )}
 
       {apt.catatan && (
         <div className="jt-notes-box">
@@ -150,7 +184,9 @@ function AppointmentCard({ apt, userId, now, busy, onUpdate }) {
             )}
             {confirmCancel ? (
               <>
-                <span className="jt-confirm-text">Batalkan janji temu ini?</span>
+                <span className="jt-confirm-text">
+                  Batalkan janji temu ini?{payment?.status === 'PAID' && ' Pembayaranmu akan dikembalikan (simulasi).'}
+                </span>
                 <button
                   type="button"
                   className="jt-btn-cancel"
@@ -179,7 +215,8 @@ function AppointmentCard({ apt, userId, now, busy, onUpdate }) {
             <button
               type="button"
               className="jt-btn-confirm"
-              disabled={busy}
+              disabled={busy || apt.perlu_bayar}
+              title={apt.perlu_bayar ? 'Menunggu pembayaran klien' : undefined}
               onClick={() => onUpdate(apt, { status: 'CONFIRMED' })}
             >
               <Check size={15} /> Konfirmasi
@@ -230,7 +267,7 @@ function AppointmentCard({ apt, userId, now, busy, onUpdate }) {
             )}
             {confirmCancel ? (
               <>
-                <span className="jt-confirm-text">Batalkan sesi ini?</span>
+                <span className="jt-confirm-text">Batalkan sesi ini?{payment?.status === 'PAID' && ' Dana akan dikembalikan ke klien (simulasi).'}</span>
                 <button
                   type="button"
                   className="jt-btn-cancel"
@@ -264,6 +301,7 @@ export default function JanjiTemuPage({ user }) {
   const [busyId, setBusyId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const [payTarget, setPayTarget] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -389,12 +427,24 @@ export default function JanjiTemuPage({ user }) {
                   now={now}
                   busy={busyId === apt.id_appointment}
                   onUpdate={handleUpdate}
+                  onPay={setPayTarget}
                 />
               ))
             )}
           </div>
         </div>
       </div>
+
+      {payTarget && (
+        <PaymentModal
+          title="Pembayaran Sesi Konsultasi"
+          subtitle={formatAppointmentRange(payTarget.tanggal_mulai, payTarget.tanggal_selesai)}
+          target={{ jenis: 'APPOINTMENT', id_appointment: payTarget.id_appointment }}
+          itemLabel="Tarif sesi"
+          onPaid={() => setReloadKey((k) => k + 1)}
+          onClose={() => setPayTarget(null)}
+        />
+      )}
     </div>
   );
 }

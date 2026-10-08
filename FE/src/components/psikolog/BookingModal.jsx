@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Video, Clock, X, CheckCircle2, AlertCircle, CalendarCheck } from 'lucide-react';
+import { MapPin, Video, Clock, X, CheckCircle2, AlertCircle, CalendarCheck, Wallet } from 'lucide-react';
 import {
   buildSlots,
   createAppointment,
@@ -9,6 +9,8 @@ import {
   hariOf,
   todayWib,
 } from '../../service/appointmentService';
+import { BIAYA_LAYANAN, formatRupiah } from '../../service/paymentService';
+import PaymentPanel from '../payment/PaymentPanel';
 
 const addDays = (dateStr, days) => {
   const d = new Date(`${dateStr}T00:00:00Z`);
@@ -44,6 +46,9 @@ export default function BookingModal({ psychologist, onClose }) {
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
   const [busyReload, setBusyReload] = useState(0);
+  const [paid, setPaid] = useState(false);
+  const isPaidSession = psychologist.tarif > 0;
+  const paying = created && isPaidSession && !paid;
 
   useEffect(() => {
     let cancelled = false;
@@ -100,10 +105,10 @@ export default function BookingModal({ psychologist, onClose }) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card pay-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-info">
-            <h3 className="modal-title">Buat Janji Konsultasi</h3>
+            <h3 className="modal-title">{paying ? 'Pembayaran Sesi Konsultasi' : 'Buat Janji Konsultasi'}</h3>
             <span className="modal-sub">{psychologist.name}</span>
           </div>
           <button type="button" className="close-modal-btn" onClick={onClose}>
@@ -111,12 +116,26 @@ export default function BookingModal({ psychologist, onClose }) {
           </button>
         </div>
 
-        {created ? (
+        {paying ? (
+          <>
+            <p className="pp-muted">
+              Jadwal {formatAppointmentRange(created.tanggal_mulai, created.tanggal_selesai)} sudah ditahan untukmu.
+              Selesaikan pembayaran agar psikolog dapat mengonfirmasi sesi.
+            </p>
+            <PaymentPanel
+              target={{ jenis: 'APPOINTMENT', id_appointment: created.id_appointment }}
+              itemLabel="Tarif sesi"
+              onPaid={() => setPaid(true)}
+            />
+          </>
+        ) : created ? (
           <div className="booking-success-state">
             <div className="success-icon-circle">
               <CheckCircle2 size={40} className="text-emerald-500" />
             </div>
-            <h4 className="success-title">Permintaan Janji Temu Terkirim!</h4>
+            <h4 className="success-title">
+              {paid ? 'Pembayaran Berhasil, Janji Temu Terkirim!' : 'Permintaan Janji Temu Terkirim!'}
+            </h4>
             <p className="success-sub">
               {formatAppointmentRange(created.tanggal_mulai, created.tanggal_selesai)}.
               <br />
@@ -212,6 +231,20 @@ export default function BookingModal({ psychologist, onClose }) {
               />
             </div>
 
+            <div className="modal-summary-box">
+              <div className="summary-row">
+                <span><Wallet size={13} /> Tarif per sesi</span>
+                <span className="font-bold text-slate-800">
+                  {isPaidSession ? formatRupiah(psychologist.tarif) : 'Gratis'}
+                </span>
+              </div>
+              {isPaidSession && (
+                <span className="pp-muted">
+                  Ditambah biaya layanan {formatRupiah(BIAYA_LAYANAN)}. Pembayaran dilakukan setelah jadwal dipilih.
+                </span>
+              )}
+            </div>
+
             {error && (
               <div className="auth-error-alert">
                 <AlertCircle size={16} />
@@ -220,7 +253,7 @@ export default function BookingModal({ psychologist, onClose }) {
             )}
 
             <button type="submit" className="confirm-booking-submit-btn" disabled={!slot || submitting}>
-              {submitting ? 'Mengirim…' : 'Kirim Permintaan Janji Temu'}
+              {submitting ? 'Mengirim…' : isPaidSession ? 'Lanjut ke Pembayaran' : 'Kirim Permintaan Janji Temu'}
             </button>
           </form>
         )}

@@ -18,6 +18,7 @@ import {
   Users,
 } from 'lucide-react';
 import { DAY_NAMES, DAY_SHORT, formatTime, listPublishedPsychologists } from '../service/psychologistService';
+import { BIAYA_LAYANAN, formatRupiah } from '../service/paymentService';
 
 const ALL_CITIES = 'Semua Kota';
 const CHIP_ALL = 'Semua';
@@ -317,12 +318,14 @@ export default function PsikologPage() {
                             {/* Schedule & Availability Box */}
                             <div className="price-slot-box">
                               <div className="price-group">
-                                <span className="price-label">Hari Praktik</span>
+                                <span className="price-label">Tarif per Sesi</span>
                                 <div className="price-value-row">
-                                  <span className="price-amount">
-                                    {p.jadwal.length ? scheduleDays(p.jadwal) : '—'}
-                                  </span>
+                                  <span className="price-amount">{p.tarif > 0 ? formatRupiah(p.tarif) : 'Gratis'}</span>
+                                  {p.tarif > 0 && <span className="price-duration">/ 60 menit</span>}
                                 </div>
+                                <span className="price-label">
+                                  Praktik: {p.jadwal.length ? scheduleDays(p.jadwal) : '—'}
+                                </span>
                               </div>
 
                               <div className="slot-badge">
@@ -478,6 +481,15 @@ export default function PsikologPage() {
                   </div>
                 </div>
               )}
+
+              <div className="info-tags-box">
+                <h5 className="info-section-label">Tarif Konsultasi</h5>
+                <p className="info-bio-text">
+                  {infoModalPsikolog.tarif > 0
+                    ? `${formatRupiah(infoModalPsikolog.tarif)} per sesi (60 menit), belum termasuk biaya layanan ${formatRupiah(BIAYA_LAYANAN)}.`
+                    : 'Gratis'}
+                </p>
+              </div>
 
               {infoModalPsikolog.jadwal.length > 0 && (
                 <div className="info-tags-box">

@@ -8,7 +8,7 @@ from app.core.errors import bad_request, forbidden, not_found, run
 from app.core.supabase_client import get_service_client
 from app.core.timezone import WIB, wib_day_bounds
 from app.schemas.psychologist import AppointmentCreate
-from app.services import chat_service
+from app.services import chat_service, payment_service
 
 
 # --- psychologists ---------------------------------------------------------
@@ -159,8 +159,9 @@ MAX_SESSION = timedelta(hours=3)
 ACTIVE_APPOINTMENT_STATUSES = ("PENDING", "CONFIRMED")
 
 _APPOINTMENT_SELECT = (
-    "*, psikolog:psychologists(nama_profesional, kota, alamat_praktik), "
-    "klien:profiles(nama_lengkap, username)"
+    "*, psikolog:psychologists(nama_profesional, kota, alamat_praktik, tarif_sesi), "
+    "klien:profiles(nama_lengkap, username), "
+    "tagihan:payments(id_payment, status, total, expired_at, created_at)"
 )
 
 # Transisi status yang diizinkan per peran.
@@ -169,6 +170,19 @@ _PSYCHOLOGIST_TRANSITIONS = {
     "PENDING": {"CONFIRMED", "CANCELLED"},
     "CONFIRMED": {"COMPLETED", "CANCELLED"},
 }
+
+
+def _with_payment(row: dict) -> dict:
+    tagihan = sorted(row.pop("tagihan", None) or [], key=lambda p: p["created_at"], reverse=True)
+    latest = tagihan[0] if tagihan else None
+    row["pembayaran"] = latest
+    row["tarif_sesi"] = (row.get("psikolog") or {}).get("tarif_sesi") or 0
+    row["perlu_bayar"] = (
+        row["status"] == "PENDING"
+        and float(row["tarif_sesi"]) > 0
+        and not any(p["status"] == "PAID" for p in tagihan)
+    )
+    return row
 
 
 def _get_appointment_row(client: Client, appointment_id: str) -> dict:
@@ -180,10 +194,12 @@ def _get_appointment_row(client: Client, appointment_id: str) -> dict:
     )
     if not result.data:
         raise not_found("Janji temu tidak ditemukan")
-    return result.data
+    return _with_payment(result.data)
 
 
 def list_appointments_for_user(client: Client, limit: int, offset: int) -> list[dict]:
+    # Tutup dulu tagihan yang lewat batas supaya status janji temu sudah terbaru.
+    payment_service.expire_stale_payments()
     # RLS: user melihat janji temu miliknya; psikolog melihat janji temu kliennya.
     result = run(
         client.table("psychologist_appointments")
@@ -191,10 +207,11 @@ def list_appointments_for_user(client: Client, limit: int, offset: int) -> list[
         .order("tanggal_mulai", desc=True)
         .range(offset, offset + limit - 1)
     )
-    return result.data
+    return [_with_payment(row) for row in result.data]
 
 
 def get_appointment(client: Client, appointment_id: str) -> dict:
+    payment_service.expire_stale_payments()
     return _get_appointment_row(client, appointment_id)
 
 
@@ -298,6 +315,8 @@ def update_appointment(client: Client, user_id: str, appointment_id: str, payloa
             allowed |= _PSYCHOLOGIST_TRANSITIONS.get(appointment["status"], set())
         if new_status not in allowed:
             raise forbidden("Perubahan status janji temu ini tidak diizinkan")
+        if new_status == "CONFIRMED" and appointment["perlu_bayar"]:
+            raise bad_request("Klien belum menyelesaikan pembayaran, sesi belum bisa dikonfirmasi")
         body["status"] = new_status
 
     if "catatan" in payload:

@@ -108,6 +108,9 @@ def register_participant(client: Client, user_id: str, event_id: str) -> dict:
         if event["sisa_kursi"] == 0:
             raise HTTPException(status.HTTP_409_CONFLICT, "Maaf, kursi untuk event ini sudah penuh")
         raise bad_request("Pendaftaran event ini sudah ditutup")
+    if event["harga"] > 0:
+        # Event berbayar: peserta terdaftar otomatis setelah pembayaran lunas (lihat /payments).
+        raise bad_request("Event berbayar, selesaikan pembayaran untuk mendaftar")
 
     if event["status_pendaftaran_saya"] == "CANCELLED":
         # Pernah daftar lalu batal: aktifkan lagi baris yang sama (primary key id_event + id_user).

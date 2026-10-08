@@ -1,3 +1,4 @@
+from decimal import Decimal
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,6 +11,12 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     cors_origins: str = "*"
     admin_access_key: str | None = None
+
+    # Pembayaran simulasi: komisi Bina Jiwa (persen dari harga) + biaya layanan flat ke user.
+    komisi_persen_psikolog: Decimal = Decimal("15")
+    komisi_persen_event: Decimal = Decimal("10")
+    biaya_layanan: Decimal = Decimal("2500")
+    batas_bayar_menit: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

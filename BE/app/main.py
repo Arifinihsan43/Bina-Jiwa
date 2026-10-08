@@ -13,6 +13,7 @@ from app.routers import (
     events,
     forum,
     notifications,
+    payments,
     profiles,
     psychologists,
     reports,
@@ -44,6 +45,7 @@ app.include_router(forum.router)
 app.include_router(psychologists.router)
 app.include_router(chat.router)
 app.include_router(events.router)
+app.include_router(payments.router)
 app.include_router(notifications.router)
 app.include_router(reports.router)
 app.include_router(emergency.router)

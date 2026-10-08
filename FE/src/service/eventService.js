@@ -8,6 +8,7 @@ import { apiRequest, ApiError } from './apiClient';
 
 export const listUpcomingEvents = async () => apiRequest('/events?upcoming_only=true&limit=100');
 export const listMyRegistrations = async () => apiRequest('/events/me/registrations');
+export const getEvent = async (eventId) => apiRequest(`/events/${eventId}`);
 
 export const registerEvent = async (eventId) => {
   try {

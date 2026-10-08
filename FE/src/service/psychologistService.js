@@ -104,6 +104,7 @@ function toListItem(p) {
     nomorHimpsi: p.nomor_himpsi,
     nomorSipp: p.nomor_sipp,
     isVerified: p.verification_status === 'VERIFIED',
+    tarif: toNumber(p.tarif_sesi) || 0,
     jadwal,
     availableToday: todaySlots.length > 0,
     slots: todaySlots,
