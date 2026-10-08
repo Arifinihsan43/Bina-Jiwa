@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, AlertCircle, Save, Send } from 'lucide-react';
-import { isoToWibInput, wibInputToIso } from '../../service/eventService';
+import { isoToWibInput, normalizeImageUrl, wibInputToIso } from '../../service/eventService';
 import { adminCreateEvent, adminUpdateEvent } from '../../service/adminService';
 
 const emptyForm = {
@@ -35,6 +35,23 @@ const toForm = (event) => ({
   gambar_url: event.gambar_url || '',
 });
 
+/** Pratinjau sampul; key={url} me-reset status gagal saat URL berubah. */
+function CoverPreview({ url }) {
+  return <CoverPreviewImage key={url} url={url} />;
+}
+
+function CoverPreviewImage({ url }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span className="cover-preview-error">
+        Gambar tidak bisa dimuat. Pastikan link mengarah langsung ke file gambar dan file dibagikan publik.
+      </span>
+    );
+  }
+  return <img src={url} alt="Pratinjau sampul" className="cover-preview" onError={() => setFailed(true)} />;
+}
+
 /**
  * Admin: buat event baru dari proposal (event = null) atau ubah event.
  * onError(err) → true bila error sudah ditangani (mis. kode akses ditolak).
@@ -60,7 +77,7 @@ export default function EventFormModal({ event, onClose, onSaved, onError }) {
     link_meeting: form.link_meeting.trim() || null,
     harga: Number(form.harga) || 0,
     kapasitas: form.kapasitas ? Number(form.kapasitas) : null,
-    gambar_url: form.gambar_url.trim() || null,
+    gambar_url: normalizeImageUrl(form.gambar_url) || null,
   });
 
   const save = async (status) => {
@@ -170,7 +187,8 @@ export default function EventFormModal({ event, onClose, onSaved, onError }) {
 
           <label className="form-group">
             <span className="form-label">URL gambar sampul</span>
-            <input className="form-input-text" type="url" value={form.gambar_url} maxLength={500} onChange={set('gambar_url')} placeholder="https://... (opsional)" />
+            <input className="form-input-text" type="url" value={form.gambar_url} maxLength={500} onChange={set('gambar_url')} placeholder="Link gambar langsung atau link Google Drive (opsional)" />
+            {form.gambar_url.trim() && <CoverPreview url={normalizeImageUrl(form.gambar_url)} />}
           </label>
 
           {error && (

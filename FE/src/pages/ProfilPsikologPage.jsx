@@ -491,7 +491,7 @@ export default function ProfilPsikologPage({ user }) {
                       <MapPin size={18} />
                       <div>
                         <h2 className="pp-card-title">Lokasi Praktik</h2>
-                        <p className="pp-card-sub">Klik peta untuk menandai lokasi klinik agar muncul di peta Cari Psikolog.</p>
+                        <p className="pp-card-sub">Cari alamat atau klik peta untuk menandai lokasi klinik. Tanpa titik lokasi, profil tidak muncul di peta Cari Psikolog.</p>
                       </div>
                     </div>
 
@@ -517,7 +517,12 @@ export default function ProfilPsikologPage({ user }) {
                       </label>
                     </div>
 
-                    <LocationPicker lat={form.latitude} lng={form.longitude} onChange={setLocation} />
+                    <LocationPicker
+                      lat={form.latitude}
+                      lng={form.longitude}
+                      onChange={setLocation}
+                      suggestedQuery={[form.alamat_praktik, form.kota].filter(Boolean).join(', ')}
+                    />
 
                     <div className="pp-location-actions">
                       <span className="pp-muted">

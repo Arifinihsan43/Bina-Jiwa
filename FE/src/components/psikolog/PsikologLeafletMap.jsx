@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, ShieldCheck, ExternalLink, Calendar, Clock, Navigation } from 'lucide-react';
+import { MapPin, ShieldCheck, ExternalLink, Navigation } from 'lucide-react';
+import { TILE_OPTIONS, TILE_URL } from '../../utils/mapTiles';
 
 // Data berasal dari input psikolog — wajib di-escape sebelum masuk ke HTML Leaflet.
 const escapeHtml = (value) =>
@@ -20,6 +21,8 @@ export default function PsikologLeafletMap({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef({});
+  const lastListKeyRef = useRef('');
+  const lastActiveRef = useRef(null);
 
   // Initialize Leaflet Map instance
   useEffect(() => {
@@ -28,33 +31,28 @@ export default function PsikologLeafletMap({
     if (!mapInstanceRef.current) {
       // Center around Jakarta Pusat / Selatan area
       const map = L.map(mapContainerRef.current, {
-        center: [-6.215, 106.825],
-        zoom: 13,
+        center: [-2.5, 117.5], // Indonesia; dipusatkan ulang ke pin psikolog setelah data dimuat
+        zoom: 5,
         zoomControl: false,
-        attributionControl: false
+        attributionControl: true // wajib untuk lisensi data OpenStreetMap
       });
+      map.attributionControl.setPrefix(false);
+      // Bagian bawah peta tertutup bilah keterangan, jadi kontrol diletakkan di atas.
+      map.attributionControl.setPosition('topleft');
+      L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Add sleek zoom control at bottom right
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-      // CartoDB Voyager clean tile layer
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-      }).addTo(map);
+      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
 
       mapInstanceRef.current = map;
     }
 
-    // Force map resize check
-    setTimeout(() => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize();
-      }
-    }, 200);
+    // Leaflet perlu diberi tahu bila ukuran wadahnya berubah (data dimuat, sidebar
+    // dibuka/ditutup, layout responsif) — tanpa ini peta tampil abu-abu/terpotong.
+    const resizeObserver = new ResizeObserver(() => mapInstanceRef.current?.invalidateSize());
+    resizeObserver.observe(mapContainerRef.current);
 
     return () => {
+      resizeObserver.disconnect();
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -66,6 +64,17 @@ export default function PsikologLeafletMap({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+
+    // Daftar pin berubah (data dimuat / filter) -> tampilkan semua pin dalam layar.
+    const listKey = psychologists.map((p) => p.id).join(',');
+    const listChanged = listKey !== lastListKeyRef.current;
+    const activeChanged = activePinId !== lastActiveRef.current;
+    lastListKeyRef.current = listKey;
+    lastActiveRef.current = activePinId;
+    if (listChanged && psychologists.length > 0) {
+      const bounds = L.latLngBounds(psychologists.map((p) => [p.lat, p.lng]));
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+    }
 
     // Clear existing markers
     Object.values(markersRef.current).forEach((marker) => marker.remove());
@@ -109,7 +118,7 @@ export default function PsikologLeafletMap({
             </div>
           </div>
           <button id="popup-book-btn-${escapeHtml(p.id)}" class="leaflet-popup-btn">
-            Rute & Buat Janji &rarr;
+            Buat Janji &rarr;
           </button>
         </div>
       `;
@@ -140,7 +149,7 @@ export default function PsikologLeafletMap({
 
       // If active pin, fly to location & open popup
       if (isActive) {
-        map.flyTo([p.lat, p.lng], 14, { duration: 1.2 });
+        if (activeChanged && !listChanged) map.flyTo([p.lat, p.lng], 14, { duration: 1.2 });
         marker.openPopup();
       }
     });
@@ -170,6 +179,13 @@ export default function PsikologLeafletMap({
             ref={mapContainerRef}
             style={{ width: '100%', height: '100%', minHeight: '520px', zIndex: 1 }}
           />
+
+          {psychologists.length === 0 && (
+            <div className="map-empty-overlay">
+              <MapPin size={22} />
+              <span>Belum ada psikolog dengan titik lokasi praktik yang cocok dengan filter ini.</span>
+            </div>
+          )}
 
           {/* Map Overlay Footer Bar */}
           <div className="map-footer-bar" style={{ zIndex: 1000, position: 'absolute', bottom: 12, left: 12, right: 12 }}>

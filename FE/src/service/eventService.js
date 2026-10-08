@@ -84,6 +84,18 @@ const rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'ID
 export const formatPrice = (harga) => (Number(harga) > 0 ? rupiah.format(Number(harga)) : 'Gratis');
 export const isFree = (event) => !(Number(event.harga) > 0);
 
+/**
+ * Ubah link halaman Google Drive menjadi link gambar langsung yang bisa dipakai <img>.
+ * ".../file/d/<ID>/view", ".../open?id=<ID>", ".../uc?id=<ID>" -> lh3.googleusercontent.com/d/<ID>
+ * URL lain dikembalikan apa adanya. File Drive harus dibagikan "Siapa saja yang memiliki link".
+ */
+export const normalizeImageUrl = (url) => {
+  const value = (url || '').trim();
+  if (!/^https?:\/\/(drive|docs)\.google\.com\//i.test(value)) return value;
+  const id = value.match(/\/d\/([\w-]{10,})/)?.[1] || value.match(/[?&]id=([\w-]{10,})/)?.[1];
+  return id ? `https://lh3.googleusercontent.com/d/${id}=w1200` : value;
+};
+
 /** Inisial nama untuk avatar penyelenggara (mengabaikan gelar seperti "M.Psi."). */
 export const initialsOf = (name = '') =>
   name
