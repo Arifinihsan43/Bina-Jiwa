@@ -22,7 +22,7 @@ import { listMyAppointments } from '../service/appointmentService';
 // Cukup panjang untuk menghitung streak menuju target 14 hari & perbandingan mingguan.
 const HISTORY_DAYS = 60;
 
-export default function DashboardPage({ user }) {
+export default function DashboardPage({ user, onToggleSidebar }) {
   const [todayKey] = useState(() => wibDateKey());
   const [question] = useState(() => promptOfTheDay());
   const [logs, setLogs] = useState({});
@@ -81,7 +81,7 @@ export default function DashboardPage({ user }) {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
       <div className="db-scrollable-body">
         <DashboardHeroBanner user={user} weeklyAverage={loadingMood ? null : summary.weekly.average} />

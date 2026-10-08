@@ -480,13 +480,31 @@
 }
 
 @media (max-width: 768px) {
+  .jt-container {
+    padding: 16px 16px 30px;
+  }
+
+  .jt-filter-tabs {
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .jt-tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .jt-card {
+    padding: 16px;
+  }
+
   .jt-link-form {
     margin-left: 0;
   }
 
-  .jt-container {
-    padding: 16px;
-  }
   .jt-card-meta,
   .jt-notes-box,
   .jt-cancel-alert,
@@ -494,3 +512,4 @@
     margin-left: 0;
   }
 }
+

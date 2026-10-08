@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   MessageSquare,
   Link2,
+  Menu,
 } from 'lucide-react';
 import {
   counterpartOf,
@@ -59,7 +60,7 @@ function MessageText({ text }) {
 }
 
 /** Jendela satu percakapan. Di-mount ulang (key) setiap kali percakapan berganti. */
-function ChatWindow({ conversation, userId, nextSession, onSeen, onSent }) {
+function ChatWindow({ conversation, userId, nextSession, onSeen, onSent, onBackToList }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
@@ -136,6 +137,16 @@ function ChatWindow({ conversation, userId, nextSession, onSeen, onSent }) {
   return (
     <>
       <div className="chat-window-header">
+        {onBackToList && (
+          <button
+            type="button"
+            className="chat-back-btn"
+            onClick={onBackToList}
+            title="Kembali ke Daftar Chat"
+          >
+            ← Kembali
+          </button>
+        )}
         <div className="chat-header-user-info">
           <div className="header-avatar-box">
             <div className="header-avatar-img initial-avatar">{initialsOf(active.name)}</div>
@@ -243,7 +254,7 @@ function ChatWindow({ conversation, userId, nextSession, onSeen, onSent }) {
   );
 }
 
-export default function MessagesPage({ user }) {
+export default function MessagesPage({ user, onToggleSidebar }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
@@ -352,6 +363,17 @@ export default function MessagesPage({ user }) {
       <div className="chat-portal-wrapper">
         <header className="portal-top-bar">
           <div className="portal-title-area">
+            {onToggleSidebar && (
+              <button
+                type="button"
+                className="db-mobile-menu-toggle"
+                onClick={onToggleSidebar}
+                title="Buka Menu Sidebar"
+                aria-label="Buka Menu Sidebar"
+              >
+                <Menu size={20} />
+              </button>
+            )}
             <div className="portal-brand-icon">
               <ShieldCheck size={18} />
             </div>
@@ -363,7 +385,7 @@ export default function MessagesPage({ user }) {
           </div>
         </header>
 
-        <div className="chat-main-container">
+        <div className={`chat-main-container ${selectedId ? 'has-active-chat' : ''}`}>
           {/* Daftar percakapan */}
           <aside className="chat-sidebar-panel">
             <div className="chat-sidebar-header">
@@ -493,6 +515,7 @@ export default function MessagesPage({ user }) {
                 nextSession={nextSession}
                 onSeen={handleSeen}
                 onSent={handleSent}
+                onBackToList={() => setSearchParams({})}
               />
             ) : (
               <div className="chat-window-empty">

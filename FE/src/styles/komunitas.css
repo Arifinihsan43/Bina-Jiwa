@@ -1470,3 +1470,64 @@
 .komunitas-modal-done strong {
   color: #0f172a;
 }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .komunitas-page-container {
+    padding: 16px 16px 40px 16px;
+  }
+
+  .komunitas-hero-section {
+    flex-direction: column;
+    padding: 20px 20px;
+  }
+
+  .komunitas-hero-title {
+    font-size: 22px;
+  }
+
+  .komunitas-hero-stat-card {
+    width: 100%;
+  }
+
+  .komunitas-filter-card {
+    padding: 16px;
+  }
+
+  .topic-filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topic-chips-group {
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .topic-chip-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .create-post-card {
+    padding: 16px;
+  }
+
+  .persona-setup-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .post-card {
+    padding: 16px;
+  }
+
+  .post-actions-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+

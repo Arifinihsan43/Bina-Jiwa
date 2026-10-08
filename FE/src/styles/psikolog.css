@@ -1352,3 +1352,58 @@
 .map-empty-overlay svg {
   color: #0284c7;
 }
+
+@media (max-width: 768px) {
+  .psikolog-page-container {
+    padding: 16px 16px 40px 16px;
+  }
+
+  .psikolog-hero-section {
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .psikolog-hero-title {
+    font-size: 22px;
+  }
+
+  .psikolog-hero-stat-card {
+    width: 100%;
+  }
+
+  .filter-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input-box {
+    width: 100%;
+  }
+
+  .chips-slider-group {
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-chip-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .psikolog-card {
+    padding: 16px;
+  }
+
+  .card-actions-row {
+    flex-direction: column;
+  }
+
+  .tanya-info-btn,
+  .buat-janji-btn {
+    width: 100%;
+  }
+}
+

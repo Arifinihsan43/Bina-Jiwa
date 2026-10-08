@@ -47,7 +47,7 @@ const sorters = {
   gratis: (a, b) => Number(a.harga) - Number(b.harga) || new Date(a.tanggal_mulai) - new Date(b.tanggal_mulai),
 };
 
-export default function EventsPage({ user }) {
+export default function EventsPage({ user, onToggleSidebar }) {
   const [tab, setTab] = useState('upcoming'); // upcoming | registered
   const [upcoming, setUpcoming] = useState([]);
   const [registered, setRegistered] = useState([]);
@@ -106,7 +106,7 @@ export default function EventsPage({ user }) {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
       <div className="events-page-container">
         <div className="events-content-wrapper">

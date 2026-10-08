@@ -292,7 +292,7 @@ function AppointmentCard({ apt, userId, now, busy, onUpdate, onPay }) {
   );
 }
 
-export default function JanjiTemuPage({ user }) {
+export default function JanjiTemuPage({ user, onToggleSidebar }) {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -359,7 +359,7 @@ export default function JanjiTemuPage({ user }) {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
       <div className="db-scrollable-body">
         <div className="jt-container">

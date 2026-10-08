@@ -13,11 +13,21 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Stethoscope
+  Stethoscope,
+  User
 } from 'lucide-react';
 import BinaJiwaLogo from '../../common/BinaJiwaLogo';
 
-export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activeMenu = 'dashboard', setActiveMenu, user, onLogout }) {
+export default function DashboardSidebar({
+  isOpen = true,
+  onToggleSidebar,
+  onCloseSidebar,
+  activeMenu = 'dashboard',
+  user,
+  onLogout,
+  onOpenCrisis,
+  onOpenSettings,
+}) {
   const navigate = useNavigate();
 
   const handleLogoutClick = () => {
@@ -38,12 +48,13 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
   if (user?.role === 'doctor') {
     navItems.push({ id: 'profil-praktik', label: 'Profil Praktik', icon: Stethoscope });
   }
+
   const handleNavClick = (itemId) => {
-    if (setActiveMenu) {
-      setActiveMenu(itemId);
-    }
     const targetPath = itemId === 'dashboard' ? '/dashboard' : `/${itemId}`;
     navigate(targetPath);
+    if (typeof window !== 'undefined' && window.innerWidth <= 768 && onCloseSidebar) {
+      onCloseSidebar();
+    }
   };
 
   return (
@@ -97,7 +108,10 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
           <button
             type="button"
             className={`db-nav-item db-nav-krisis ${activeMenu === 'krisis' ? 'active' : ''}`}
-            onClick={() => setActiveMenu && setActiveMenu('krisis')}
+            onClick={() => {
+              navigate('/krisis');
+              if (typeof window !== 'undefined' && window.innerWidth <= 768 && onCloseSidebar) onCloseSidebar();
+            }}
             title={!isOpen ? 'Bantuan & Krisis' : undefined}
           >
             <AlertCircle size={18} className="db-nav-icon-krisis" />
@@ -106,8 +120,11 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
 
           <button
             type="button"
-            className={`db-nav-item ${activeMenu === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveMenu && setActiveMenu('settings')}
+            className={`db-nav-item ${activeMenu === 'pengaturan' ? 'active' : ''}`}
+            onClick={() => {
+              navigate('/pengaturan');
+              if (typeof window !== 'undefined' && window.innerWidth <= 768 && onCloseSidebar) onCloseSidebar();
+            }}
             title={!isOpen ? 'Pengaturan' : undefined}
           >
             <Settings size={18} className="db-nav-icon" />
@@ -117,14 +134,20 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
       </nav>
 
       {/* User Profile Card */}
-      <div className="db-user-card" title={!isOpen ? (user?.name || 'Rani Kartika') : undefined}>
-        <img
-          src={user?.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-          alt={user?.name || 'User Profile'}
-          className="db-user-avatar"
-        />
+      <div className="db-user-card" title={!isOpen ? (user?.name || 'Pengguna') : undefined}>
+        {user?.avatar ? (
+          <img
+            src={user.avatar}
+            alt={user?.name || 'User Profile'}
+            className="db-user-avatar"
+          />
+        ) : (
+          <div className="db-user-avatar db-user-avatar-placeholder" title={user?.name || 'Pengguna'}>
+            <User size={20} />
+          </div>
+        )}
         <div className="db-user-info">
-          <span className="db-user-name">{user?.name || 'Rani Kartika'}</span>
+          <span className="db-user-name">{user?.name || 'Pengguna'}</span>
           <span className="db-user-status">
             <span className="db-status-dot"></span>
             <span>{user?.status || 'Sesi Aktif'}</span>
@@ -142,3 +165,4 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
     </aside>
   );
 }
+

@@ -24,6 +24,13 @@ function App() {
     navigate('/dashboard');
   };
 
+  const handleUpdateUser = (updatedUserData) => {
+    setUser((prev) => ({
+      ...prev,
+      ...updatedUserData,
+    }));
+  };
+
   const handleLogout = () => {
     setUser(null);
     logoutService();
@@ -34,6 +41,7 @@ function App() {
       user={user}
       onAuthSuccess={handleAuthSuccess}
       onLogout={handleLogout}
+      onUpdateUser={handleUpdateUser}
     />
   );
 }

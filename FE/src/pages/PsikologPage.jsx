@@ -45,7 +45,7 @@ function PsychologistAvatar({ p, className }) {
 const scheduleDays = (jadwal) =>
   [...new Set(jadwal.map((s) => s.hari))].map((h) => DAY_SHORT[h - 1]).join(', ');
 
-export default function PsikologPage() {
+export default function PsikologPage({ onToggleSidebar }) {
   const [psychologists, setPsychologists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -126,7 +126,7 @@ export default function PsikologPage() {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
         <div className="psikolog-page-container">
           <div className="psikolog-content-wrapper">

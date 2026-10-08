@@ -12,18 +12,20 @@ import JanjiTemuPage from '../pages/JanjiTemuPage';
 import EventsPage from '../pages/EventsPage';
 import ProfilPsikologPage from '../pages/ProfilPsikologPage';
 import AdminVerifikasiPage from '../pages/AdminVerifikasiPage';
+import SettingsPage from '../pages/SettingsPage';
+import BantuanKrisisPage from '../pages/BantuanKrisisPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import DashboardLayout from '../components/dashboard/navigation/DashboardLayout';
 
-function DashboardLayoutWrapper({ user, onLogout }) {
+function DashboardLayoutWrapper({ user, onLogout, onUpdateUser }) {
   return (
-    <DashboardLayout user={user} onLogout={onLogout}>
+    <DashboardLayout user={user} onLogout={onLogout} onUpdateUser={onUpdateUser}>
       <Outlet />
     </DashboardLayout>
   );
 }
 
-export default function AppRoutes({ user, onAuthSuccess, onLogout }) {
+export default function AppRoutes({ user, onAuthSuccess, onLogout, onUpdateUser }) {
   return (
     <Routes>
       <Route path="/" element={<HomePage user={user} onLogout={onLogout} />} />
@@ -32,7 +34,7 @@ export default function AppRoutes({ user, onAuthSuccess, onLogout }) {
       <Route path="/admin" element={<AdminVerifikasiPage />} />
 
       {/* Shared Dashboard Layout Shell */}
-      <Route element={<DashboardLayoutWrapper user={user} onLogout={onLogout} />}>
+      <Route element={<DashboardLayoutWrapper user={user} onLogout={onLogout} onUpdateUser={onUpdateUser} />}>
         <Route path="/dashboard" element={<DashboardPage user={user} onLogout={onLogout} />} />
         <Route path="/mood" element={<MoodReflectionPage user={user} onLogout={onLogout} />} />
         <Route path="/pesan" element={<MessagesPage user={user} onLogout={onLogout} />} />
@@ -41,7 +43,8 @@ export default function AppRoutes({ user, onAuthSuccess, onLogout }) {
         <Route path="/janji-temu" element={<JanjiTemuPage user={user} onLogout={onLogout} />} />
         <Route path="/events" element={<EventsPage user={user} onLogout={onLogout} />} />
         <Route path="/profil-praktik" element={<ProfilPsikologPage user={user} onLogout={onLogout} />} />
-
+        <Route path="/pengaturan" element={<SettingsPage user={user} onUpdateUser={onUpdateUser} />} />
+        <Route path="/krisis" element={<BantuanKrisisPage user={user} />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

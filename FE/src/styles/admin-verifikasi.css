@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Admin - Verifikasi Psikolog
+   Admin - Verifikasi Psikolog & Panel Admin
    ========================================================================== */
 
 /* --- Layout mandiri (di luar dashboard) ----------------------------------- */
@@ -12,6 +12,12 @@
 
 .av-page-nav {
   max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .av-page-nav a {
@@ -42,6 +48,7 @@
   align-items: stretch;
   text-align: center;
   padding: 32px 28px;
+  box-sizing: border-box;
 }
 
 .av-gate-icon {
@@ -77,6 +84,8 @@
   padding: 4px;
   background: #f1f5f9;
   border-radius: 14px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .av-tab {
@@ -92,6 +101,7 @@
   font-weight: 600;
   color: #475569;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .av-tab.active {
@@ -342,50 +352,21 @@
   gap: 10px;
 }
 
-/* --- Responsive ----------------------------------------------------------- */
-@media (max-width: 760px) {
-  .av-page-content {
-    padding: 0 16px 40px;
-  }
-
-  .av-nav-right .brand-name {
-    display: none;
-  }
-
-  .av-card {
-    flex-direction: column;
-  }
-
-  .av-card-actions {
-    width: 100%;
-    flex-direction: row;
-  }
-
-  .av-card-actions > button {
-    flex: 1;
-  }
-
-  .av-license-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .av-toolbar-right {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .av-search {
-    max-width: none;
-  }
-}
-
 /* --- Navigasi bagian & komunitas ------------------------------------------ */
 .av-section-nav {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
-  padding-bottom: 4px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
   border-bottom: 1px solid #e2e8f0;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.av-section-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .av-section-btn {
@@ -401,7 +382,10 @@
   font-weight: 600;
   color: #64748b;
   cursor: pointer;
-  margin-bottom: -5px;
+  margin-bottom: -9px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
 .av-section-btn:hover {
@@ -413,6 +397,7 @@
   background: #ffffff;
   border-color: #e2e8f0;
   border-bottom-color: #ffffff;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.02);
 }
 
 .av-section {
@@ -492,4 +477,138 @@
 .av-content-status.deleted {
   background: #f1f5f9;
   color: #475569;
+}
+
+/* --- Responsive Media Queries (Mobile, Tablet, Desktop) -------------------- */
+
+@media (max-width: 1024px) {
+  .av-page-content {
+    padding: 0 24px 40px;
+  }
+
+  .av-page-nav {
+    padding: 16px 24px;
+  }
+}
+
+@media (max-width: 840px) {
+  .av-page-content {
+    padding: 0 16px 32px;
+  }
+
+  .av-page-nav {
+    padding: 14px 16px;
+  }
+
+  .av-nav-right {
+    gap: 10px;
+  }
+
+  .av-nav-right .brand-name {
+    display: none;
+  }
+
+  .av-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .av-toolbar-right {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .av-search {
+    max-width: none;
+  }
+
+  .av-card {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .av-card-actions {
+    width: 100%;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .av-card-actions > button {
+    flex: 1;
+  }
+
+  .av-license-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .av-page-nav {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .auth-back-btn span {
+    font-size: 12px;
+  }
+
+  .av-tabs {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .av-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .av-tab {
+    flex: 1;
+    justify-content: center;
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 12.5px;
+  }
+
+  .av-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .av-date {
+    font-size: 11px;
+  }
+
+  .av-gate-card {
+    padding: 24px 18px;
+  }
+
+  .av-section-btn {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .av-page-nav {
+    align-items: center;
+  }
+
+  .auth-back-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .av-card-actions {
+    flex-direction: column;
+  }
+
+  .av-card-actions > button {
+    width: 100%;
+  }
 }

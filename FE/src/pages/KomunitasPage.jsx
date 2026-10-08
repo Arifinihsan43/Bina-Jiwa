@@ -210,7 +210,7 @@ function Composer({ persona, categories, onPersonaChange, onPosted }) {
   );
 }
 
-export default function KomunitasPage() {
+export default function KomunitasPage({ onToggleSidebar }) {
   const [persona, setPersona] = useState(null);
   const [personaLoaded, setPersonaLoaded] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -300,7 +300,7 @@ export default function KomunitasPage() {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
       <div className="komunitas-page-container">
         <div className="komunitas-content-wrapper">

@@ -18,3 +18,6 @@ export { default as MoodReflectionHero } from './charts/MoodReflectionHero';
 
 // Dashboard Modals
 export { default as MoodDetailModal } from './modals/MoodDetailModal';
+export { default as CrisisModal } from './modals/CrisisModal';
+export { default as SettingsModal } from './modals/SettingsModal';
+

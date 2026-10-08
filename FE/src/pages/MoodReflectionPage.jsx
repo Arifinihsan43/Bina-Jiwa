@@ -14,7 +14,7 @@ import { AlertCircle, X } from 'lucide-react';
 const pad = (n) => String(n).padStart(2, '0');
 const lastDayOfMonth = (year, month) => new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
-export default function MoodReflectionPage() {
+export default function MoodReflectionPage({ onToggleSidebar }) {
   const [todayKey] = useState(() => wibDateKey());
   const [view, setView] = useState(() => ({
     year: Number(todayKey.slice(0, 4)),
@@ -99,7 +99,7 @@ export default function MoodReflectionPage() {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
       <div className="db-scrollable-body">
         <MoodReflectionHero />

@@ -285,7 +285,7 @@ function ScheduleManager({ profile }) {
   );
 }
 
-export default function ProfilPsikologPage({ user }) {
+export default function ProfilPsikologPage({ user, onToggleSidebar }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -382,7 +382,7 @@ export default function ProfilPsikologPage({ user }) {
   if (!isDoctor) {
     return (
       <div className="db-main-content">
-        <DashboardHeader />
+        <DashboardHeader onToggleSidebar={onToggleSidebar} />
         <div className="psikolog-page-container">
           <div className="pp-banner pp-banner-info">
             <Stethoscope size={20} />
@@ -400,7 +400,7 @@ export default function ProfilPsikologPage({ user }) {
 
   return (
     <div className="db-main-content">
-      <DashboardHeader />
+      <DashboardHeader onToggleSidebar={onToggleSidebar} />
 
       <div className="psikolog-page-container">
         <div className="psikolog-content-wrapper">

@@ -154,3 +154,50 @@ export const restoreSession = async () => {
     return session.user || null;
   }
 };
+
+/**
+  * Memperbarui informasi profil pengguna (nama, foto profil, dll)
+  * di backend dan memperbarui sesi lokal sessionStore.
+  */
+export const updateProfileService = async (updateData) => {
+  const session = sessionStore.get();
+  const currentUser = getCachedUser() || {};
+
+  // Persiapkan user object lokal
+  const updatedUserLocally = {
+    ...currentUser,
+    ...(updateData.name !== undefined && { name: updateData.name }),
+    ...(updateData.avatar !== undefined && { avatar: updateData.avatar || undefined }),
+    ...(updateData.city !== undefined && { city: updateData.city }),
+  };
+
+  if (!session?.access_token) {
+    sessionStore.update({ user: updatedUserLocally });
+    return updatedUserLocally;
+  }
+
+  try {
+    const payload = {};
+    if (updateData.name !== undefined) payload.nama_lengkap = updateData.name;
+    if (updateData.avatar !== undefined) payload.foto_profil = updateData.avatar || null;
+    if (updateData.city !== undefined) payload.kota = updateData.city;
+
+    const profile = await apiRequest('/profiles/me', {
+      method: 'PATCH',
+      token: session.access_token,
+      body: payload,
+    });
+
+    const updatedUser = toUser(profile, session.user?.email || currentUser.email);
+    if (updateData.avatar !== undefined) {
+      updatedUser.avatar = updateData.avatar || undefined;
+    }
+    sessionStore.update({ user: updatedUser });
+    return updatedUser;
+  } catch (err) {
+    console.warn('Backend updateProfile skipped or offline, updating locally:', err);
+    sessionStore.update({ user: updatedUserLocally });
+    return updatedUserLocally;
+  }
+};
+
