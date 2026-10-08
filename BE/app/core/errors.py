@@ -12,6 +12,7 @@ _POSTGRES_CODE_MAP: dict[str, int] = {
     "23514": status.HTTP_422_UNPROCESSABLE_ENTITY,  # check_violation
     "23502": status.HTTP_422_UNPROCESSABLE_ENTITY,  # not_null_violation
     "42501": status.HTTP_403_FORBIDDEN,  # insufficient_privilege (RLS)
+    "P0002": status.HTTP_404_NOT_FOUND,  # no_data_found (raise dari fungsi SQL)
     "PGRST116": status.HTTP_404_NOT_FOUND,  # 0 rows for single()
     "PGRST204": status.HTTP_404_NOT_FOUND,
 }

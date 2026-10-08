@@ -62,7 +62,7 @@ export default function DashboardSidebar({ isOpen = true, onToggleSidebar, activ
       <div className="db-sidebar-brand">
         <Link to="/" className="db-brand-link" title="Bina Jiwa - Ruang Pulih & Diri">
           <div className="db-brand-icon">
-            <BinaJiwaLogo size={22} color="#ffffff" />
+            <BinaJiwaLogo size={32} />
           </div>
           <div className="db-brand-text">
             <span className="db-brand-title">Bina Jiwa</span>

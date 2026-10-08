@@ -72,6 +72,7 @@ supabase/
 | Psikolog | `/psychologists`, `/appointments` | daftar/verifikasi psikolog, jadwal, booking konsultasi |
 | Chat | `/chat` | percakapan & pesan user↔psikolog |
 | Event | `/events` | CRUD event, pendaftaran peserta |
+| Pembayaran (simulasi) | `/payments` | Rincian biaya, buat tagihan, simulasi lunas, batalkan |
 | Notifikasi | `/notifications` | daftar notifikasi, tandai dibaca |
 | Laporan | `/reports` | lapor konten/user, moderasi oleh admin |
 | Kontak darurat | `/emergency-contacts` | daftar hotline krisis (publik, tanpa login) |

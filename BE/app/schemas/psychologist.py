@@ -20,6 +20,7 @@ class PsychologistCreate(BaseModel):
     nomor_himpsi: str | None = Field(default=None, max_length=50)
     nomor_sipp: str | None = Field(default=None, max_length=50)
     dokumen_verifikasi_url: str | None = None
+    tarif_sesi: Decimal = Field(default=Decimal("0"), ge=0, le=Decimal("10000000"))
 
 
 class PsychologistUpdate(BaseModel):
@@ -33,6 +34,7 @@ class PsychologistUpdate(BaseModel):
     nomor_himpsi: str | None = Field(default=None, max_length=50)
     nomor_sipp: str | None = Field(default=None, max_length=50)
     dokumen_verifikasi_url: str | None = None
+    tarif_sesi: Decimal | None = Field(default=None, ge=0, le=Decimal("10000000"))
     status: Literal["ACTIVE", "INACTIVE"] | None = None
 
 
@@ -58,6 +60,7 @@ class PsychologistOut(BaseModel):
     latitude: Decimal | None = None
     longitude: Decimal | None = None
     status: Literal["ACTIVE", "INACTIVE"]
+    tarif_sesi: Decimal = Decimal("0")
     nomor_himpsi: str | None = None
     nomor_sipp: str | None = None
     dokumen_verifikasi_url: str | None = None
@@ -103,6 +106,7 @@ class PsychologistPublicOut(BaseModel):
     latitude: Decimal | None = None
     longitude: Decimal | None = None
     status: Literal["ACTIVE", "INACTIVE"]
+    tarif_sesi: Decimal = Decimal("0")
     nomor_himpsi: str | None = None
     nomor_sipp: str | None = None
     verification_status: VerificationStatus
@@ -137,6 +141,15 @@ class AppointmentClientInfo(BaseModel):
     username: str | None = None
 
 
+class AppointmentPaymentInfo(BaseModel):
+    """Tagihan terakhir untuk janji temu ini (lihat /payments)."""
+
+    id_payment: str
+    status: Literal["PENDING", "PAID", "EXPIRED", "CANCELLED", "REFUNDED"]
+    total: Decimal
+    expired_at: datetime
+
+
 class AppointmentOut(BaseModel):
     id_appointment: str
     id_user: str
@@ -149,6 +162,10 @@ class AppointmentOut(BaseModel):
     status: AppointmentStatus
     psikolog: AppointmentPsychologistInfo | None = None
     klien: AppointmentClientInfo | None = None
+    tarif_sesi: Decimal = Decimal("0")
+    # True bila sesi berbayar dan belum lunas (psikolog belum bisa konfirmasi).
+    perlu_bayar: bool = False
+    pembayaran: AppointmentPaymentInfo | None = None
     created_at: datetime
     updated_at: datetime
 

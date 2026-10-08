@@ -4,11 +4,12 @@ from supabase import Client
 from app.core.security import require_admin_key
 from app.schemas.common import Message
 from app.schemas.event import EventCreate, EventOut, EventParticipantOut, EventUpdate, ParticipantUpdate
+from app.schemas.payment import PaymentOut, PaymentStatus, PaymentSummary, PaymentType
 from app.schemas.forum import CategoryCreate, CategoryOut, CategoryUpdate
 from app.schemas.psychologist import PsychologistOut, PsychologistVerify, VerificationStatus
 from app.schemas.report import AdminReportModerate, AdminReportOut, ReportStatus
 from app.core.errors import bad_request
-from app.services import event_service, forum_service, psychologist_service, report_service
+from app.services import event_service, forum_service, payment_service, psychologist_service, report_service
 
 DEFAULT_CATEGORIES = [
     ("Curhat Anonim", "Ruang bebas untuk menuangkan isi hati tanpa dihakimi."),
@@ -136,3 +137,21 @@ def admin_update_event_participant(
     if payload.status == "CANCELLED":
         raise bad_request("Gunakan status ATTENDED atau REGISTERED untuk absensi")
     return event_service.admin_set_attendance(client, event_id, user_id, attended=payload.status == "ATTENDED")
+
+
+# --- pembayaran (simulasi) -------------------------------------------------------
+
+@router.get("/payments", response_model=list[PaymentOut])
+def admin_list_payments(
+    status: PaymentStatus | None = None,
+    jenis: PaymentType | None = None,
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    client: Client = Depends(require_admin_key),
+) -> list[PaymentOut]:
+    return payment_service.admin_list_payments(client, status, jenis, limit, offset)
+
+
+@router.get("/payments/summary", response_model=PaymentSummary)
+def admin_payment_summary(client: Client = Depends(require_admin_key)) -> PaymentSummary:
+    return payment_service.admin_summary(client)

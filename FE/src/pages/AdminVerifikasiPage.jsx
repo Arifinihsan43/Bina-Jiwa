@@ -4,6 +4,7 @@ import BinaJiwaLogo from '../components/common/BinaJiwaLogo';
 import CategoryAdmin from '../components/admin/CategoryAdmin';
 import ReportAdmin from '../components/admin/ReportAdmin';
 import EventAdmin from '../components/admin/EventAdmin';
+import PaymentAdmin from '../components/admin/PaymentAdmin';
 import '../styles/psikolog.css';
 import '../styles/profil-psikolog.css';
 import '../styles/admin-verifikasi.css';
@@ -26,6 +27,7 @@ import {
   Tags,
   Flag,
   CalendarDays,
+  Wallet,
 } from 'lucide-react';
 import { splitSpecializations, safeExternalUrl } from '../service/psychologistService';
 import {
@@ -51,6 +53,14 @@ const SECTIONS = [
     icon: CalendarDays,
     title: 'Events & Workshop',
     description: 'Buat event dari proposal yang masuk lewat email, publikasikan, dan kelola peserta serta absensinya.',
+  },
+  {
+    id: 'pembayaran',
+    label: 'Pembayaran',
+    icon: Wallet,
+    title: 'Pembayaran',
+    description:
+      'Riwayat transaksi (simulasi) sesi psikolog dan event berbayar, beserta pembagian komisi dan biaya layanan Bina Jiwa.',
   },
   {
     id: 'kategori',
@@ -247,7 +257,7 @@ function AdminTopNav({ onLock }) {
         )}
         <Link to="/" className="nav-brand">
           <div className="brand-icon">
-            <BinaJiwaLogo size={22} color="#ffffff" />
+            <BinaJiwaLogo size={32} />
           </div>
           <span className="brand-name">Bina Jiwa</span>
         </Link>
@@ -491,6 +501,7 @@ export default function AdminVerifikasiPage() {
           </nav>
 
           {section === 'events' && <EventAdmin onError={handleSectionError} />}
+          {section === 'pembayaran' && <PaymentAdmin onError={handleSectionError} />}
           {section === 'kategori' && <CategoryAdmin onError={handleSectionError} />}
           {section === 'laporan' && <ReportAdmin onError={handleSectionError} />}
 

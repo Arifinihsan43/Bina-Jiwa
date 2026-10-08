@@ -7,8 +7,11 @@ import {
   formatEventShort,
   formatEventTime,
   formatPrice,
+  getEvent,
+  isFree,
   registerEvent,
 } from '../../service/eventService';
+import PaymentPanel from '../payment/PaymentPanel';
 
 const isHttp = (url) => /^https?:\/\//i.test(url || '');
 
@@ -21,6 +24,8 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
   const [error, setError] = useState('');
   const [justRegistered, setJustRegistered] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const paidEvent = !isFree(event);
 
   const registered = ['REGISTERED', 'ATTENDED'].includes(event.status_pendaftaran_saya);
   const started = new Date(event.tanggal_mulai).getTime() <= now;
@@ -43,7 +48,19 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    // Event berbayar: peserta terdaftar otomatis setelah pembayaran lunas.
+    if (paidEvent) {
+      setError('');
+      setPaying(true);
+      return;
+    }
     const updated = await run(() => registerEvent(event.id_event));
+    if (updated) setJustRegistered(true);
+  };
+
+  const handlePaid = async () => {
+    const updated = await run(() => getEvent(event.id_event));
+    setPaying(false);
     if (updated) setJustRegistered(true);
   };
 
@@ -54,10 +71,12 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card event-detail-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card event-detail-modal pay-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-info">
-            <h3 className="modal-title">{registered ? 'Tiket Event Kamu' : 'Pendaftaran Sesi Workshop'}</h3>
+            <h3 className="modal-title">
+              {registered ? 'Tiket Event Kamu' : paying ? 'Pembayaran Tiket Event' : 'Pendaftaran Sesi Workshop'}
+            </h3>
             <span className="modal-sub">{event.judul}</span>
           </div>
           <button type="button" className="close-modal-btn" onClick={onClose} aria-label="Tutup">
@@ -70,11 +89,24 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
             <div className="success-icon-circle">
               <CheckCircle2 size={36} className="text-emerald-500" />
             </div>
-            <h4 className="success-title">Pendaftaran Berhasil!</h4>
+            <h4 className="success-title">{paidEvent ? 'Pembayaran Berhasil, Kamu Terdaftar!' : 'Pendaftaran Berhasil!'}</h4>
             <p className="success-sub">Detail akses sesi ada di bawah. Kamu juga bisa melihatnya kapan saja di tab “Sesi Terdaftar Saya”.</p>
           </div>
         )}
 
+        {paying ? (
+          <>
+            <PaymentPanel
+              target={{ jenis: 'EVENT', id_event: event.id_event }}
+              itemLabel="Harga tiket"
+              onPaid={handlePaid}
+            />
+            <button type="button" className="event-text-btn" onClick={() => setPaying(false)}>
+              Kembali ke detail event
+            </button>
+          </>
+        ) : (
+        <>
         <div className="event-modal-summary">
           <div className="summary-row">
             <span><Calendar size={13} /> Tanggal</span>
@@ -126,8 +158,8 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
             ) : (
               <span><MapPin size={14} /> {event.lokasi}</span>
             )}
-            {Number(event.harga) > 0 && (
-              <span className="event-access-note">Event berbayar: ikuti instruksi pembayaran dari penyelenggara.</span>
+            {paidEvent && (
+              <span className="event-access-note">Tiket berbayar: pembayaran {formatPrice(event.harga)} sudah lunas.</span>
             )}
           </div>
         )}
@@ -143,7 +175,10 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
           event.status_pendaftaran_saya === 'REGISTERED' && !started && event.status === 'PUBLISHED' && (
             confirmCancel ? (
               <div className="event-cancel-confirm">
-                <span>Batalkan pendaftaran? Kursimu akan diberikan ke peserta lain.</span>
+                <span>
+                  Batalkan pendaftaran? Kursimu akan diberikan ke peserta lain.
+                  {paidEvent && ' Pembayaranmu akan dikembalikan (simulasi).'}
+                </span>
                 <div>
                   <button type="button" className="event-action-btn btn-dark" onClick={handleCancel} disabled={busy}>
                     {busy ? 'Membatalkan…' : 'Ya, Batalkan'}
@@ -171,7 +206,11 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
               <span className="form-hint">Data diambil dari akun Bina Jiwa kamu dan hanya dibagikan ke penyelenggara.</span>
             </div>
             <button type="submit" className="confirm-booking-submit-btn" disabled={busy}>
-              {busy ? 'Mendaftarkan…' : `Konfirmasi Pendaftaran${Number(event.harga) > 0 ? ` (${formatPrice(event.harga)})` : ''}`}
+              {busy
+                ? 'Mendaftarkan…'
+                : paidEvent
+                  ? `Lanjut ke Pembayaran (${formatPrice(event.harga)})`
+                  : 'Konfirmasi Pendaftaran'}
             </button>
           </form>
         ) : (
@@ -182,6 +221,8 @@ export default function EventDetailModal({ event, user, now, onClose, onChange }
                 ? 'Kursi untuk event ini sudah penuh.'
                 : 'Pendaftaran untuk event ini sudah ditutup.'}
           </p>
+        )}
+        </>
         )}
       </div>
     </div>

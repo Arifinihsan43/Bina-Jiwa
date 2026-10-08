@@ -4,6 +4,7 @@ import { DashboardHeader } from '../components/dashboard';
 import LocationPicker from '../components/psikolog/LocationPicker';
 import '../styles/psikolog.css';
 import '../styles/profil-psikolog.css';
+import '../styles/payment.css';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -21,6 +22,7 @@ import {
   CheckCircle2,
   LocateFixed,
   Search,
+  Wallet,
 } from 'lucide-react';
 import {
   DAY_NAMES,
@@ -33,6 +35,12 @@ import {
   updateSchedule,
   deleteSchedule,
 } from '../service/psychologistService';
+import {
+  BIAYA_LAYANAN,
+  KOMISI_PERSEN_PSIKOLOG,
+  formatRupiah,
+  netForPsychologist,
+} from '../service/paymentService';
 
 const EMPTY_FORM = {
   nama_profesional: '',
@@ -45,6 +53,7 @@ const EMPTY_FORM = {
   nomor_himpsi: '',
   nomor_sipp: '',
   dokumen_verifikasi_url: '',
+  tarif_sesi: '0',
   status: 'ACTIVE',
 };
 
@@ -56,6 +65,7 @@ function profileToForm(profile) {
     ...Object.fromEntries(Object.keys(EMPTY_FORM).map((k) => [k, profile[k] ?? EMPTY_FORM[k]])),
     latitude: profile.latitude !== null && profile.latitude !== undefined ? Number(profile.latitude) : null,
     longitude: profile.longitude !== null && profile.longitude !== undefined ? Number(profile.longitude) : null,
+    tarif_sesi: String(Number(profile.tarif_sesi) || 0),
   };
 }
 
@@ -355,7 +365,10 @@ export default function ProfilPsikologPage({ user }) {
 
     setSaving(true);
     try {
-      const saved = await saveMyPsychologistProfile(form, { isNew: !profile });
+      const saved = await saveMyPsychologistProfile(
+        { ...form, tarif_sesi: Number(form.tarif_sesi) || 0 },
+        { isNew: !profile }
+      );
       setProfile(saved);
       setForm(profileToForm(saved));
       setSuccess(profile ? 'Perubahan profil praktik berhasil disimpan.' : 'Profil praktik berhasil dibuat dan diajukan untuk verifikasi.');
@@ -542,6 +555,41 @@ export default function ProfilPsikologPage({ user }) {
                         </button>
                       </div>
                     </div>
+                  </section>
+
+                  <section className="pp-card">
+                    <div className="pp-card-header">
+                      <Wallet size={18} />
+                      <div>
+                        <h2 className="pp-card-title">Tarif Konsultasi</h2>
+                        <p className="pp-card-sub">Tarif per sesi 60 menit yang dibayar klien saat membuat janji temu. Isi 0 untuk sesi gratis.</p>
+                      </div>
+                    </div>
+
+                    <label className="pp-field">
+                      <span className="pp-label">Tarif per Sesi (Rp)</span>
+                      <input
+                        type="number"
+                        className="pp-input"
+                        value={form.tarif_sesi}
+                        onChange={setField('tarif_sesi')}
+                        min={0}
+                        max={10000000}
+                        step={1000}
+                        inputMode="numeric"
+                      />
+                    </label>
+
+                    {Number(form.tarif_sesi) > 0 && (
+                      <dl className="pay-split">
+                        <dt>Dibayar klien</dt>
+                        <dd>{formatRupiah(Number(form.tarif_sesi) + BIAYA_LAYANAN)}</dd>
+                        <dt>Komisi Bina Jiwa ({KOMISI_PERSEN_PSIKOLOG}%)</dt>
+                        <dd>{formatRupiah(Number(form.tarif_sesi) - netForPsychologist(form.tarif_sesi))}</dd>
+                        <dt>Anda terima per sesi</dt>
+                        <dd>{formatRupiah(netForPsychologist(form.tarif_sesi))}</dd>
+                      </dl>
+                    )}
                   </section>
 
                   <section className="pp-card">

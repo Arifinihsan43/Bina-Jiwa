@@ -90,3 +90,8 @@ export const adminSetAttendance = async (eventId, userId, attended) =>
     method: 'PATCH',
     body: { status: attended ? 'ATTENDED' : 'REGISTERED' },
   });
+
+// --- Pembayaran (simulasi) ------------------------------------------------------
+
+export const adminListPayments = async () => adminRequest('/admin/payments?limit=200');
+export const adminPaymentSummary = async () => adminRequest('/admin/payments/summary');
