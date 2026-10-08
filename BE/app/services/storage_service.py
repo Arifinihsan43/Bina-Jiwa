@@ -8,6 +8,8 @@ from app.core.supabase_client import get_service_client
 
 _BUCKET_RULES: dict[str, dict] = {
     "avatars": {"content_types": {"image/png", "image/jpeg", "image/webp"}, "max_bytes": 2_000_000},
+    # Foto profil di halaman Pengaturan (bucket publik; URL disimpan di profiles.foto_profil).
+    "profile-images": {"content_types": {"image/png", "image/jpeg", "image/webp"}, "max_bytes": 5_000_000},
     "personas": {"content_types": {"image/png", "image/jpeg", "image/webp"}, "max_bytes": 2_000_000},
     "events": {"content_types": {"image/png", "image/jpeg", "image/webp"}, "max_bytes": 5_000_000},
     "verification-docs": {

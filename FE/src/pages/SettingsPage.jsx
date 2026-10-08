@@ -5,10 +5,17 @@ import {
   Check, 
   Save, 
   Camera, 
-  Trash2 
+  Trash2,
+  AlertCircle,
 } from 'lucide-react';
 import DashboardHeader from '../components/dashboard/navigation/DashboardHeader';
 import { updateProfileService } from '../service/authService';
+import {
+  PROFILE_IMAGE_BUCKET,
+  PROFILE_IMAGE_MAX_BYTES,
+  PROFILE_IMAGE_TYPES,
+  uploadFile,
+} from '../service/storageService';
 
 export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
   const [name, setName] = useState(user?.name || 'Pengguna');
@@ -17,6 +24,9 @@ export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // File baru yang belum diunggah; diunggah ke Supabase Storage saat disimpan.
+  const [pendingFile, setPendingFile] = useState(null);
+  const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -27,34 +37,50 @@ export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
     }
   }, [user]);
 
+  // Lepaskan URL pratinjau lokal saat diganti / halaman ditutup.
+  useEffect(() => {
+    if (!avatar.startsWith('blob:')) return undefined;
+    return () => URL.revokeObjectURL(avatar);
+  }, [avatar]);
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // agar file yang sama bisa dipilih lagi
     if (!file) return;
+    setError('');
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran file foto maksimal adalah 5MB.');
+    if (!PROFILE_IMAGE_TYPES.includes(file.type)) {
+      setError('Format foto harus PNG, JPG, atau WebP.');
+      return;
+    }
+    if (file.size > PROFILE_IMAGE_MAX_BYTES) {
+      setError('Ukuran file foto maksimal adalah 5MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setAvatar(event.target.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    setPendingFile(file);
+    setAvatar(URL.createObjectURL(file));
+  };
+
+  const handleRemoveAvatar = () => {
+    setPendingFile(null);
+    setAvatar('');
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
 
     try {
+      const avatarUrl = pendingFile ? await uploadFile(PROFILE_IMAGE_BUCKET, pendingFile) : avatar;
       const updatedUser = await updateProfileService({
         name,
-        avatar: avatar || null,
+        avatar: avatarUrl || null,
         city: city || null,
       });
+      setPendingFile(null);
+      setAvatar(updatedUser.avatar || '');
 
       if (onUpdateUser) {
         onUpdateUser(updatedUser);
@@ -65,8 +91,7 @@ export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
         setSavedSuccess(false);
       }, 3500);
     } catch (err) {
-      console.error('Failed to update profile:', err);
-      alert(err.message || 'Gagal menyimpan perubahan profil.');
+      setError(err.message || 'Gagal menyimpan perubahan profil.');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,6 +124,12 @@ export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
                 <span>Pengaturan profil kamu berhasil diperbarui!</span>
               </div>
             )}
+            {error && (
+              <div className="auth-error-alert" style={{ marginBottom: '20px' }}>
+                <AlertCircle size={18} />
+                <span>{error}</span>
+              </div>
+            )}
 
             <div className="settings-section">
               <h3 className="settings-section-title">Foto Profil &amp; Identitas Diri</h3>
@@ -128,7 +159,7 @@ export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
                       <button
                         type="button"
                         className="settings-avatar-remove-btn"
-                        onClick={() => setAvatar('')}
+                        onClick={handleRemoveAvatar}
                         title="Kembali ke foto polos"
                       >
                         <Trash2 size={16} />
@@ -138,7 +169,7 @@ export default function SettingsPage({ user, onUpdateUser, onToggleSidebar }) {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept={PROFILE_IMAGE_TYPES.join(',')}
                       style={{ display: 'none' }}
                       onChange={handleFileChange}
                     />

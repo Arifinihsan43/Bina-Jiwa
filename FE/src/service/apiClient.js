@@ -64,7 +64,9 @@ function extractErrorMessage(data, status) {
 
 async function rawRequest(path, { method = 'GET', body, token, headers: extraHeaders } = {}) {
   const headers = { Accept: 'application/json', ...extraHeaders };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData (unggah file): browser mengisi Content-Type multipart beserta boundary sendiri.
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let response;
@@ -72,7 +74,7 @@ async function rawRequest(path, { method = 'GET', body, token, headers: extraHea
     response = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
   } catch {
     throw new ApiError('Tidak dapat terhubung ke server. Pastikan backend sedang berjalan.', 0);
