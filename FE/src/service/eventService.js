@@ -49,6 +49,9 @@ Terima kasih.`;
 export const proposalMailto = () =>
   `mailto:${PROPOSAL_EMAIL}?subject=${encodeURIComponent('Proposal Event Bina Jiwa')}&body=${encodeURIComponent(PROPOSAL_TEMPLATE)}`;
 
+export const proposalGmailUrl = () =>
+  `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(PROPOSAL_EMAIL)}&su=${encodeURIComponent('Proposal Event Bina Jiwa')}&body=${encodeURIComponent(PROPOSAL_TEMPLATE)}`;
+
 // --- Format -----------------------------------------------------------------
 
 const fmt = (options) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', ...options });

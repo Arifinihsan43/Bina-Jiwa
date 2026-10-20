@@ -28,7 +28,7 @@ import {
   isFree,
   listMyRegistrations,
   listUpcomingEvents,
-  proposalMailto,
+  proposalGmailUrl,
 } from '../service/eventService';
 
 const CHIPS = ['Semua', 'Gratis', 'Berbayar', 'Online', 'Tatap Muka'];
@@ -302,7 +302,12 @@ export default function EventsPage({ user, onToggleSidebar }) {
               </p>
             </div>
             <div className="collab-actions-right">
-              <a className="ajukan-kolaborasi-btn" href={proposalMailto()}>
+              <a
+                className="ajukan-kolaborasi-btn"
+                href={proposalGmailUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Mail size={16} /> Ajukan Proposal Kolaborasi
               </a>
             </div>
