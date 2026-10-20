@@ -28,6 +28,7 @@ import {
   splitLinks,
 } from '../service/chatService';
 import { formatAppointmentRange, listMyAppointments } from '../service/appointmentService';
+import { useDashboardNav } from '../context/DashboardNavContext';
 
 const LIST_POLL_MS = 15000;
 const MESSAGE_POLL_MS = 5000;
@@ -254,8 +255,11 @@ function ChatWindow({ conversation, userId, nextSession, onSeen, onSent, onBackT
   );
 }
 
-export default function MessagesPage({ user, onToggleSidebar }) {
+export default function MessagesPage({ user, onToggleSidebar: toggleProp }) {
   const navigate = useNavigate();
+  // Sama seperti DashboardHeader: route tidak mengirim prop, jadi ambil dari layout.
+  const navContext = useDashboardNav();
+  const onToggleSidebar = toggleProp || navContext?.toggleSidebar;
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);

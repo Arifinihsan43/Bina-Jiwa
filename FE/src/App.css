@@ -438,12 +438,16 @@
 }
 
 .mobile-menu {
+  /* .navbar memakai pointer-events: none; tanpa ini semua tap tembus ke halaman. */
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   max-width: 1240px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   margin: 10px auto 0;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1.5px solid rgba(255, 255, 255, 0.85);
@@ -453,7 +457,8 @@
   animation: navFloatDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.mobile-menu a {
+.mobile-menu > a {
+  display: block;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-main);
@@ -462,7 +467,7 @@
   transition: all 0.2s ease;
 }
 
-.mobile-menu a:hover {
+.mobile-menu > a:hover {
   background: rgba(224, 242, 254, 0.5);
   color: #0284c7;
 }
@@ -480,6 +485,17 @@
 .mobile-actions .btn-secondary {
   width: 100%;
   justify-content: center;
+  padding: 12px 18px;
+  font-size: 15px;
+}
+
+/* Section yang dituju menu tidak tertutup header melayang */
+#fitur,
+#cara-kerja,
+#spesialisasi,
+#event,
+#faq {
+  scroll-margin-top: 96px;
 }
 
 /* ==========================================================================
@@ -4380,6 +4396,11 @@
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* Bayangan sidebar tersembunyi masih terlihat di tepi kiri layar */
+  .db-sidebar.collapsed {
+    box-shadow: none;
+  }
+
   .db-sidebar-collapse-toggle {
     display: none;
   }
@@ -5208,15 +5229,81 @@
   color: #ef4444;
 }
 
+/* Kalender tetap 7 kolom agar tanggal sejajar dengan nama hari; isi sel diringkas. */
 @media (max-width: 1024px) {
   .mc-grid-body {
-    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .mc-grid-header {
+    gap: 6px;
+  }
+  .mc-cell {
+    min-height: 76px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+  .mc-cell-score,
+  .mc-today-tag {
+    display: none;
+  }
+  .mc-cal-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .mc-legend-group {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 }
 
 @media (max-width: 640px) {
+  .mc-calendar-card {
+    padding: 18px 14px;
+  }
+  .mc-grid-header,
   .mc-grid-body {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+  .mc-grid-day-name {
+    font-size: 11px;
+  }
+  .mc-cell {
+    min-height: 0;
+    aspect-ratio: 1 / 1.15;
+    padding: 4px 2px;
+    border-radius: 10px;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  .mc-cell-top {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mc-cell-num {
+    font-size: 12px;
+  }
+  .mc-cell-icon {
+    font-size: 14px;
+  }
+  .mc-cell-mood-info,
+  .mc-cell-future-label,
+  .mc-cell-empty-label {
+    display: none;
+  }
+  .mc-cell-today-action {
+    margin-top: 2px;
+  }
+  .mc-today-fill-btn {
+    padding: 3px;
+    border-radius: 8px;
+  }
+  .mc-today-fill-btn span {
+    display: none;
+  }
+  .mc-legend-item {
+    font-size: 11px;
+    padding: 3px 9px;
   }
   .mc-cal-top-bar {
     flex-direction: column;

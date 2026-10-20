@@ -318,7 +318,9 @@ export const updateProfileService = async (updateData) => {
     sessionStore.update({ user: updatedUser });
     return updatedUser;
   } catch (err) {
-    console.warn('Backend updateProfile skipped or offline, updating locally:', err);
+    // Hanya simpan lokal bila backend tidak bisa dihubungi; penolakan server (mis. validasi) diteruskan.
+    if (!(err instanceof ApiError) || err.status !== 0) throw err;
+    console.warn('Backend offline, profil hanya diperbarui lokal:', err);
     sessionStore.update({ user: updatedUserLocally });
     return updatedUserLocally;
   }

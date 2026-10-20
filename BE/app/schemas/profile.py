@@ -17,7 +17,7 @@ class ProfileOut(BaseModel):
 
 class ProfileUpdate(BaseModel):
     nama_lengkap: str | None = Field(default=None, min_length=1, max_length=100)
-    foto_profil: str | None = None
+    foto_profil: str | None = Field(default=None, max_length=255)  # URL dari bucket profile-images
     kota: str | None = Field(default=None, max_length=50)
 
 
