@@ -1,8 +1,8 @@
-import React from 'react';
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
+import AuthCallbackPage from '../pages/AuthCallbackPage';
 import DashboardPage from '../pages/DashboardPage';
 import MoodReflectionPage from '../pages/MoodReflectionPage';
 import MessagesPage from '../pages/MessagesPage';
@@ -18,6 +18,9 @@ import NotFoundPage from '../pages/NotFoundPage';
 import DashboardLayout from '../components/dashboard/navigation/DashboardLayout';
 
 function DashboardLayoutWrapper({ user, onLogout, onUpdateUser }) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
   return (
     <DashboardLayout user={user} onLogout={onLogout} onUpdateUser={onUpdateUser}>
       <Outlet />
@@ -29,8 +32,15 @@ export default function AppRoutes({ user, onAuthSuccess, onLogout, onUpdateUser 
   return (
     <Routes>
       <Route path="/" element={<HomePage user={user} onLogout={onLogout} />} />
-      <Route path="/login" element={<LoginPage onAuthSuccess={onAuthSuccess} />} />
-      <Route path="/register" element={<RegisterPage onAuthSuccess={onAuthSuccess} />} />
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/dashboard" replace /> : <LoginPage onAuthSuccess={onAuthSuccess} />}
+      />
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage onAuthSuccess={onAuthSuccess} />}
+      />
+      <Route path="/auth/callback" element={<AuthCallbackPage onAuthSuccess={onAuthSuccess} />} />
       <Route path="/admin" element={<AdminVerifikasiPage />} />
 
       {/* Shared Dashboard Layout Shell */}

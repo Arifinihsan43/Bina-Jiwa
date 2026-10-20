@@ -30,9 +30,12 @@ export default function DashboardSidebar({
 }) {
   const navigate = useNavigate();
 
-  const handleLogoutClick = () => {
+  const handleLogoutClick = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (onLogout) onLogout();
-    navigate('/login');
   };
 
   const navItems = [

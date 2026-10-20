@@ -5,6 +5,7 @@
  */
 
 import { apiRequest, sessionStore, ApiError } from './apiClient';
+import { supabase } from '../utils/supabase';
 
 // Role di UI ('user' | 'doctor') <-> role di backend ('USER' | 'PSYCHOLOGIST' | 'ADMIN')
 const ROLE_TO_API = { user: 'USER', doctor: 'PSYCHOLOGIST' };
@@ -15,6 +16,8 @@ const AUTH_ERROR_MESSAGES = {
   'Invalid login credentials': 'Email atau kata sandi salah.',
   'Email not confirmed': 'Email belum dikonfirmasi. Silakan cek kotak masuk email Anda.',
   'User already registered': 'Email sudah terdaftar. Silakan masuk.',
+  'Unsupported provider: provider is not enabled': 'Provider login Google belum diaktifkan di dashboard Supabase.',
+  'Provider (issuer "https://accounts.google.com") is not enabled': 'Provider login Google belum diaktifkan di dashboard Supabase.',
 };
 
 function translateError(err) {
@@ -82,6 +85,126 @@ export const loginService = async ({ email, password, role, rememberMe = true })
     throw translateError(err);
   }
 };
+
+/**
+ * Inisialisasi proses autentikasi OAuth Google via Supabase.
+ * Melakukan pre-flight test agar error konfigurasi dapat ditangani dengan ramah.
+ */
+export const loginWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+      skipBrowserRedirect: true,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
+    },
+  });
+
+  if (error) {
+    throw translateError(error);
+  }
+
+  if (!data?.url) {
+    throw new Error('Gagal mendapatkan URL otentikasi Google dari Supabase.');
+  }
+
+  // Pre-flight check URL untuk memverifikasi apakah provider Google sudah aktif di Supabase
+  try {
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const checkRes = await fetch(data.url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...(supabaseKey && { apikey: supabaseKey }),
+      },
+    });
+    if (!checkRes.ok) {
+      const errorJson = await checkRes.json().catch(() => null);
+      const msg = errorJson?.msg || errorJson?.error_description || errorJson?.message || '';
+      if (
+        msg.includes('Unsupported provider') ||
+        msg.includes('provider is not enabled') ||
+        msg.includes('provider_disabled')
+      ) {
+        const customErr = new Error('PROVIDER_DISABLED');
+        customErr.code = 'PROVIDER_DISABLED';
+        customErr.rawMessage = msg;
+        throw customErr;
+      }
+    }
+  } catch (err) {
+    if (err.code === 'PROVIDER_DISABLED') {
+      throw err;
+    }
+    // Jika bukan error provider disabled (misal CORS saat redirect normal), abaikan dan lanjutkan navigasi
+  }
+
+  // Arahkan browser ke Google OAuth
+  window.location.href = data.url;
+  return data;
+};
+
+/**
+ * Dipanggil di halaman /auth/callback setelah user login via Google
+ * dan dialihkan kembali ke aplikasi.
+ */
+export const handleOAuthCallback = async () => {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+
+  let session = null;
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) throw translateError(error);
+    session = data.session;
+  }
+
+  if (!session) {
+    const { data } = await supabase.auth.getSession();
+    session = data?.session;
+  }
+
+  if (!session) {
+    // Beri beberapa jeda sejenak untuk parsing hash fragment dari Supabase
+    for (let i = 0; i < 4; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) {
+        session = data.session;
+        break;
+      }
+    }
+  }
+
+  if (!session?.access_token) {
+    throw new Error('Sesi autentikasi Google tidak ditemukan atau telah kedaluwarsa.');
+  }
+
+  let profile = null;
+  try {
+    profile = await fetchProfile(session.access_token);
+  } catch (err) {
+    console.warn('Percobaan pertama ambil profil setelah OAuth gagal, mencoba ulang...', err);
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    profile = await fetchProfile(session.access_token);
+  }
+
+  const user = toUser(profile, session.user.email);
+  sessionStore.set(
+    {
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      user,
+    },
+    true
+  );
+
+  return user;
+};
+
 
 /**
  * Hasil: user (langsung masuk), atau { needsEmailConfirmation: true, email }

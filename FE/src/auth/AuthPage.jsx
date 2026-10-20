@@ -39,24 +39,16 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess }) {
     }
   };
 
-  const handleBackToHome = () => {
-    if (window.history.length > 2) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
-
   return (
     <div className="auth-page-wrapper">
       <AnimatedBackground />
 
       {/* Top Bar Navigation */}
       <header className="auth-page-nav">
-        <button type="button" className="auth-back-btn" onClick={handleBackToHome}>
+        <Link to="/" className="auth-back-btn">
           <ArrowLeft size={18} />
           <span>Kembali ke Beranda</span>
-        </button>
+        </Link>
 
         <div className="auth-nav-right">
           <Link to="/admin" className="auth-back-btn auth-admin-btn">

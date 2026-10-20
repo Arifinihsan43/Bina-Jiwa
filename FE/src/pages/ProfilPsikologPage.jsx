@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/dashboard';
 import LocationPicker from '../components/psikolog/LocationPicker';
@@ -58,6 +58,13 @@ const EMPTY_FORM = {
 };
 
 const LICENSE_FIELDS = ['nomor_himpsi', 'nomor_sipp', 'dokumen_verifikasi_url'];
+
+// Pilihan jam format 24 jam (tanpa AM/PM, interval 30 menit: 00:00 - 23:30, plus 23:59)
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, '0');
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${h}:${m}`;
+}).concat('23:59');
 
 function profileToForm(profile) {
   return {
@@ -250,35 +257,57 @@ function ScheduleManager({ profile }) {
       )}
 
       <form className="pp-schedule-add" onSubmit={handleAdd}>
-        <select
-          className="pp-input"
-          value={draft.hari}
-          onChange={(e) => setDraft((d) => ({ ...d, hari: e.target.value }))}
-          aria-label="Hari"
-        >
-          {DAY_NAMES.map((name, i) => (
-            <option key={name} value={i + 1}>{name}</option>
-          ))}
-        </select>
-        <input
-          type="time"
-          className="pp-input"
-          value={draft.jam_mulai}
-          onChange={(e) => setDraft((d) => ({ ...d, jam_mulai: e.target.value }))}
-          aria-label="Jam mulai"
-          required
-        />
-        <input
-          type="time"
-          className="pp-input"
-          value={draft.jam_selesai}
-          onChange={(e) => setDraft((d) => ({ ...d, jam_selesai: e.target.value }))}
-          aria-label="Jam selesai"
-          required
-        />
-        <button type="submit" className="pp-btn-secondary" disabled={busyId === 'new'}>
+        <div className="pp-schedule-add-inputs">
+          <div className="pp-schedule-field">
+            <label className="pp-schedule-field-label">Hari</label>
+            <select
+              className="pp-input pp-schedule-select"
+              value={draft.hari}
+              onChange={(e) => setDraft((d) => ({ ...d, hari: e.target.value }))}
+              aria-label="Pilih Hari"
+            >
+              {DAY_NAMES.map((name, i) => (
+                <option key={name} value={i + 1}>{name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="pp-schedule-field">
+            <label className="pp-schedule-field-label">Jam Mulai</label>
+            <select
+              className="pp-input pp-schedule-select"
+              value={draft.jam_mulai}
+              onChange={(e) => setDraft((d) => ({ ...d, jam_mulai: e.target.value }))}
+              aria-label="Jam mulai"
+              required
+            >
+              {TIME_OPTIONS.map((time) => (
+                <option key={`mulai-${time}`} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="pp-schedule-field">
+            <label className="pp-schedule-field-label">Jam Selesai</label>
+            <select
+              className="pp-input pp-schedule-select"
+              value={draft.jam_selesai}
+              onChange={(e) => setDraft((d) => ({ ...d, jam_selesai: e.target.value }))}
+              aria-label="Jam selesai"
+              required
+            >
+              {TIME_OPTIONS.map((time) => (
+                <option key={`selesai-${time}`} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" className="pp-btn-secondary pp-full pp-schedule-add-btn" disabled={busyId === 'new'}>
           <Plus size={16} />
-          <span>Tambah</span>
+          <span>Tambah Jadwal</span>
         </button>
       </form>
     </section>
@@ -294,6 +323,9 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [locating, setLocating] = useState(false);
+
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const errorAlertRef = useRef(null);
 
   const isDoctor = user?.role === 'doctor';
 
@@ -320,11 +352,13 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
   const setField = (key) => (e) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
     setSuccess('');
+    setError('');
   };
 
   const setLocation = (latitude, longitude) => {
     setForm((f) => ({ ...f, latitude, longitude }));
     setSuccess('');
+    setError('');
   };
 
   const handleUseMyLocation = () => {
@@ -351,16 +385,52 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setHasSubmitted(true);
     setError('');
     setSuccess('');
 
-    if (!form.nama_profesional.trim()) {
-      setError('Nama profesional wajib diisi.');
+    // Validasi semua field profil praktik bersifat wajib diisi
+    const missing = [];
+    if (!form.nama_profesional?.trim()) missing.push('Nama Profesional');
+    if (!form.spesialisasi?.trim()) missing.push('Spesialisasi');
+    if (!form.bio?.trim()) missing.push('Bio & Pengalaman');
+    if (!form.kota?.trim()) missing.push('Kota');
+    if (!form.alamat_praktik?.trim()) missing.push('Alamat Praktik');
+    if (form.latitude === null || form.longitude === null || form.latitude === undefined || form.longitude === undefined) {
+      missing.push('Titik Koordinat Lokasi pada Peta');
+    }
+    if (form.tarif_sesi === '' || form.tarif_sesi === null || form.tarif_sesi === undefined || isNaN(Number(form.tarif_sesi)) || Number(form.tarif_sesi) < 0) {
+      missing.push('Tarif Konsultasi');
+    }
+    if (!form.nomor_himpsi?.trim()) missing.push('Nomor Anggota HIMPSI');
+    if (!form.nomor_sipp?.trim()) missing.push('Nomor SIPP');
+    if (!form.dokumen_verifikasi_url?.trim()) missing.push('Link Dokumen Verifikasi');
+
+    if (missing.length > 0) {
+      const errorMsg = missing.length === 1
+        ? `Semua data profil praktik wajib diisi. Mohon lengkapi data "${missing[0]}" sebelum menyimpan.`
+        : `Semua data profil praktik wajib diisi. Masih ada ${missing.length} data yang belum lengkap: ${missing.join(', ')}.`;
+      setError(errorMsg);
+      setTimeout(() => {
+        errorAlertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
-    if (!profile && !form.nomor_himpsi.trim() && !form.nomor_sipp.trim()) {
-      setError('Isi minimal nomor HIMPSI atau SIPP agar profil dapat diverifikasi.');
-      return;
+
+    // Validasi format link dokumen verifikasi
+    if (form.dokumen_verifikasi_url?.trim()) {
+      try {
+        const parsed = new URL(form.dokumen_verifikasi_url.trim());
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          throw new Error();
+        }
+      } catch {
+        setError('Link dokumen verifikasi harus berupa tautan URL yang valid (diawali http:// atau https://).');
+        setTimeout(() => {
+          errorAlertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+        return;
+      }
     }
 
     setSaving(true);
@@ -371,6 +441,7 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
       );
       setProfile(saved);
       setForm(profileToForm(saved));
+      setHasSubmitted(false);
       setSuccess(profile ? 'Perubahan profil praktik berhasil disimpan.' : 'Profil praktik berhasil dibuat dan diajukan untuk verifikasi.');
     } catch (err) {
       setError(err.message);
@@ -447,7 +518,17 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
 
               <div className="pp-grid">
                 {/* Form utama */}
-                <form className="pp-form-column" onSubmit={handleSubmit}>
+                <form className="pp-form-column" onSubmit={handleSubmit} noValidate>
+                  {error && (
+                    <div className="auth-error-alert" ref={errorAlertRef} style={{ marginBottom: 0 }}>
+                      <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                      <div>
+                        <strong style={{ display: 'block', marginBottom: 2 }}>Peringatan: Formulir Belum Lengkap</strong>
+                        <span>{error}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <section className="pp-card">
                     <div className="pp-card-header">
                       <Stethoscope size={18} />
@@ -458,9 +539,11 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
                     </div>
 
                     <label className="pp-field">
-                      <span className="pp-label">Nama Profesional (dengan gelar) *</span>
+                      <span className="pp-label">
+                        Nama Profesional (dengan gelar) <span className="pp-required">*</span>
+                      </span>
                       <input
-                        className="pp-input"
+                        className={`pp-input ${hasSubmitted && !form.nama_profesional?.trim() ? 'pp-input-error' : ''}`}
                         value={form.nama_profesional}
                         onChange={setField('nama_profesional')}
                         placeholder="Contoh: Nadia Pratiwi, M.Psi., Psikolog"
@@ -470,13 +553,16 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
                     </label>
 
                     <label className="pp-field">
-                      <span className="pp-label">Spesialisasi / Fokus Penanganan</span>
+                      <span className="pp-label">
+                        Spesialisasi / Fokus Penanganan <span className="pp-required">*</span>
+                      </span>
                       <input
-                        className="pp-input"
+                        className={`pp-input ${hasSubmitted && !form.spesialisasi?.trim() ? 'pp-input-error' : ''}`}
                         value={form.spesialisasi}
                         onChange={setField('spesialisasi')}
                         placeholder="Pisahkan dengan koma, contoh: Kecemasan, Burnout, Trauma"
                         maxLength={150}
+                        required
                       />
                       {tags.length > 0 && (
                         <div className="specialization-tags-group pp-tags-preview">
@@ -488,13 +574,16 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
                     </label>
 
                     <label className="pp-field">
-                      <span className="pp-label">Bio &amp; Pengalaman</span>
+                      <span className="pp-label">
+                        Bio &amp; Pengalaman Praktik <span className="pp-required">*</span>
+                      </span>
                       <textarea
-                        className="pp-input pp-textarea"
+                        className={`pp-input pp-textarea ${hasSubmitted && !form.bio?.trim() ? 'pp-input-error' : ''}`}
                         value={form.bio}
                         onChange={setField('bio')}
                         placeholder="Ceritakan pengalaman, pendekatan terapi, dan siapa saja yang Anda dampingi."
                         rows={4}
+                        required
                       />
                     </label>
                   </section>
@@ -510,22 +599,28 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
 
                     <div className="pp-row">
                       <label className="pp-field">
-                        <span className="pp-label">Kota</span>
+                        <span className="pp-label">
+                          Kota <span className="pp-required">*</span>
+                        </span>
                         <input
-                          className="pp-input"
+                          className={`pp-input ${hasSubmitted && !form.kota?.trim() ? 'pp-input-error' : ''}`}
                           value={form.kota}
                           onChange={setField('kota')}
                           placeholder="Contoh: Jakarta Selatan"
                           maxLength={50}
+                          required
                         />
                       </label>
                       <label className="pp-field">
-                        <span className="pp-label">Alamat Praktik / Nama Klinik</span>
+                        <span className="pp-label">
+                          Alamat Praktik / Nama Klinik <span className="pp-required">*</span>
+                        </span>
                         <input
-                          className="pp-input"
+                          className={`pp-input ${hasSubmitted && !form.alamat_praktik?.trim() ? 'pp-input-error' : ''}`}
                           value={form.alamat_praktik}
                           onChange={setField('alamat_praktik')}
                           placeholder="Klinik Jiwa Harmoni, Jl. ..."
+                          required
                         />
                       </label>
                     </div>
@@ -538,10 +633,10 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
                     />
 
                     <div className="pp-location-actions">
-                      <span className="pp-muted">
+                      <span className={form.latitude !== null && form.longitude !== null ? "pp-muted" : (hasSubmitted ? "pp-location-missing" : "pp-muted")}>
                         {form.latitude !== null && form.longitude !== null
-                          ? `Titik: ${form.latitude}, ${form.longitude}`
-                          : 'Belum ada titik lokasi.'}
+                          ? `Titik koordinat: ${form.latitude}, ${form.longitude}`
+                          : 'Titik koordinat belum ditentukan (Wajib klik peta / Gunakan lokasi saya) *'}
                       </span>
                       <div className="pp-location-buttons">
                         {form.latitude !== null && (
@@ -567,16 +662,19 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
                     </div>
 
                     <label className="pp-field">
-                      <span className="pp-label">Tarif per Sesi (Rp)</span>
+                      <span className="pp-label">
+                        Tarif per Sesi (Rp) <span className="pp-required">*</span>
+                      </span>
                       <input
                         type="number"
-                        className="pp-input"
+                        className={`pp-input ${hasSubmitted && (form.tarif_sesi === '' || Number(form.tarif_sesi) < 0) ? 'pp-input-error' : ''}`}
                         value={form.tarif_sesi}
                         onChange={setField('tarif_sesi')}
                         min={0}
                         max={10000000}
                         step={1000}
                         inputMode="numeric"
+                        required
                       />
                     </label>
 
@@ -603,24 +701,45 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
 
                     <div className="pp-row">
                       <label className="pp-field">
-                        <span className="pp-label">Nomor Anggota HIMPSI</span>
-                        <input className="pp-input" value={form.nomor_himpsi} onChange={setField('nomor_himpsi')} maxLength={50} />
+                        <span className="pp-label">
+                          Nomor Anggota HIMPSI <span className="pp-required">*</span>
+                        </span>
+                        <input
+                          className={`pp-input ${hasSubmitted && !form.nomor_himpsi?.trim() ? 'pp-input-error' : ''}`}
+                          value={form.nomor_himpsi}
+                          onChange={setField('nomor_himpsi')}
+                          placeholder="Nomor anggota HIMPSI"
+                          maxLength={50}
+                          required
+                        />
                       </label>
                       <label className="pp-field">
-                        <span className="pp-label">Nomor SIPP</span>
-                        <input className="pp-input" value={form.nomor_sipp} onChange={setField('nomor_sipp')} maxLength={50} />
+                        <span className="pp-label">
+                          Nomor SIPP <span className="pp-required">*</span>
+                        </span>
+                        <input
+                          className={`pp-input ${hasSubmitted && !form.nomor_sipp?.trim() ? 'pp-input-error' : ''}`}
+                          value={form.nomor_sipp}
+                          onChange={setField('nomor_sipp')}
+                          placeholder="Nomor Surat Izin Praktik Psikologi"
+                          maxLength={50}
+                          required
+                        />
                       </label>
                     </div>
 
                     <label className="pp-field">
-                      <span className="pp-label">Link Dokumen Verifikasi (STR / SIPP / Ijazah)</span>
+                      <span className="pp-label">
+                        Link Dokumen Verifikasi (STR / SIPP / Ijazah) <span className="pp-required">*</span>
+                      </span>
                       <input
                         type="url"
-                        className="pp-input"
+                        className={`pp-input ${hasSubmitted && !form.dokumen_verifikasi_url?.trim() ? 'pp-input-error' : ''}`}
                         value={form.dokumen_verifikasi_url}
                         onChange={setField('dokumen_verifikasi_url')}
                         placeholder="https://drive.google.com/..."
                         maxLength={500}
+                        required
                       />
                     </label>
 
@@ -652,13 +771,16 @@ export default function ProfilPsikologPage({ user, onToggleSidebar }) {
 
                   {error && (
                     <div className="auth-error-alert">
-                      <AlertCircle size={18} />
-                      <span>{error}</span>
+                      <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                      <div>
+                        <strong style={{ display: 'block', marginBottom: 2 }}>Peringatan: Formulir Belum Lengkap</strong>
+                        <span>{error}</span>
+                      </div>
                     </div>
                   )}
                   {success && (
                     <div className="auth-success-alert">
-                      <CheckCircle2 size={18} />
+                      <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
                       <span>{success}</span>
                     </div>
                   )}
